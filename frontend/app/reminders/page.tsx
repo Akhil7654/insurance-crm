@@ -1,0 +1,246 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const API = 'http://127.0.0.1:8000/api';
+
+export default function ReminderDashboard() {
+  const [notes, setNotes] = useState<any[]>([]);
+  const [hideOverdue, setHideOverdue] = useState(true); // collapsed by default
+  const router = useRouter();
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`${API}/notes/today/`).then((r) => r.json()),
+      fetch(`${API}/notes/overdue/`).then((r) => r.json()),
+      fetch(`${API}/notes/upcoming/`).then((r) => r.json()),
+    ]).then(([today, overdue, upcoming]) => {
+      const combined = [
+        ...overdue.map((n: any) => ({ ...n, priority: 'overdue' })),
+        ...today.map((n: any) => ({ ...n, priority: 'today' })),
+        ...upcoming.map((n: any) => ({ ...n, priority: 'upcoming' })),
+      ];
+
+      combined.sort(
+        (a: any, b: any) =>
+          new Date(a.follow_up_date).getTime() -
+          new Date(b.follow_up_date).getTime()
+      );
+
+      setNotes(combined);
+    });
+  }, []);
+
+  const handleDelete = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+
+    const ok = confirm('Delete this reminder?');
+    if (!ok) return;
+
+    try {
+      await fetch(`${API}/notes/${id}/`, {
+        method: 'DELETE',
+      });
+
+      setNotes((prev) => prev.filter((n) => n.id !== id));
+    } catch {
+      alert('Delete failed');
+    }
+  };
+
+  const priorityStyle = (priority: string) => {
+    switch (priority) {
+      case 'overdue':
+        return 'border-red-500 bg-red-50 text-red-700';
+      case 'today':
+        return 'border-yellow-500 bg-yellow-50 text-yellow-700';
+      default:
+        return 'border-blue-500 bg-blue-50 text-blue-700';
+    }
+  };
+
+  const overdueNotes = notes.filter((n) => n.priority === 'overdue');
+  const otherNotes = notes.filter((n) => n.priority !== 'overdue');
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-3xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: -15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="mb-6"
+        >
+          <h1 className="text-3xl font-bold text-gray-800">
+            Reminder Dashboard
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Track upcoming and overdue client follow-ups
+          </p>
+        </motion.div>
+
+        {/* 1️⃣ OVERDUE SECTION – always at the top, collapsible */}
+        {overdueNotes.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-8 border-b border-gray-300 pb-6"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-800">
+                ⚠️ Overdue ({overdueNotes.length})
+              </h2>
+              <button
+                onClick={() => setHideOverdue(!hideOverdue)}
+                className="text-sm px-3 font-semibold py-1.5 bg-gray-200 hover:bg-red-200 rounded-lg transition cursor-pointer text-black"
+              >
+                {hideOverdue ? 'Show' : 'Hide'}
+              </button>
+            </div>
+
+            <AnimatePresence>
+              {!hideOverdue && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-4 overflow-hidden"
+                >
+                  {overdueNotes.map((n: any, i) => (
+                    <motion.div
+                      key={n.id}
+                      initial={{ opacity: 0, y: 25 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      whileHover={{ scale: 1.02 }}
+                      onClick={() => router.push(`/vehicle/client/${n.client}`)}
+                      className="bg-gray-900 border rounded-2xl shadow-sm hover:shadow-md cursor-pointer p-5 border-gray-800"
+                    >
+                      <div className="flex justify-between items-start gap-4">
+                        <div>
+                          <p className="font-semibold text-white text-lg">
+                            {n.text}
+                          </p>
+                          <p className="text-sm text-white mt-2">
+                            📅 Follow-up: {n.follow_up_date}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-col items-end gap-3">
+                          <span
+                            className={`px-3 py-1 text-xs font-semibold rounded-full border ${priorityStyle(
+                              n.priority
+                            )}`}
+                          >
+                            {n.priority}
+                          </span>
+                          <button
+                            onClick={(e) => handleDelete(e, n.id)}
+                            className="
+                              flex items-center gap-1
+                              bg-red-500/10
+                              hover:bg-red-500/20
+                              text-white
+                              hover:text-red-300
+                              px-3 py-1.5
+                              rounded-lg
+                              text-xs
+                              font-semibold
+                              transition
+                              border border-red-500/20
+                              hover:border-red-500/40
+                            "
+                          >
+                            🗑 Delete
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+        {/* 2️⃣ TODAY & UPCOMING – always visible */}
+        <div className="space-y-4">
+          <AnimatePresence>
+            {otherNotes.map((n: any, i) => (
+              <motion.div
+                key={n.id}
+                initial={{ opacity: 0, y: 25 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ delay: i * 0.05 }}
+                whileHover={{ scale: 1.02 }}
+                onClick={() => router.push(`/vehicle/client/${n.client}`)}
+                className="bg-gray-900 border rounded-2xl shadow-sm hover:shadow-md cursor-pointer p-5 border-gray-800"
+              >
+                <div className="flex justify-between items-start gap-4">
+                  <div>
+                    <p className="font-semibold text-white text-lg">
+                      {n.text}
+                    </p>
+                    <p className="text-sm text-white mt-2">
+                      📅 Follow-up: {n.follow_up_date}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-3">
+                    <span
+                      className={`px-3 py-1 text-xs font-semibold rounded-full border ${priorityStyle(
+                        n.priority
+                      )}`}
+                    >
+                      {n.priority}
+                    </span>
+                    <button
+                      onClick={(e) => handleDelete(e, n.id)}
+                      className="
+                        flex items-center gap-1
+                        bg-red-500/10
+                        hover:bg-red-500/20
+                        text-white
+                        hover:text-red-300
+                        px-3 py-1.5
+                        rounded-lg
+                        text-xs
+                        font-semibold
+                        transition
+                        border border-red-500/20
+                        hover:border-red-500/40
+                      "
+                    >
+                      🗑 Delete
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+
+        {/* 3️⃣ EMPTY STATE – only when absolutely no reminders */}
+        {notes.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-gray-900 rounded-2xl shadow border p-8 text-center border-gray-800"
+          >
+            <p className="text-white text-lg font-bold">
+              🎉 No reminders pending
+            </p>
+            <p className="text-sm text-gray-400 mt-1">
+              You're all caught up!
+            </p>
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+}
