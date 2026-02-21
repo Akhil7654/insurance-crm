@@ -12,21 +12,19 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+import dj_database_url  
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
+# ✅ SECRET_KEY, DEBUG from env (instead of hardcoded)
+SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret")
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-!hygq03n@cau20jfeb0(kbvf!s@ntke0h!3e&b#sejg#22n%+a'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+# ✅ ALLOWED_HOSTS from env
+# Render will set: ALLOWED_HOSTS=your-backend.onrender.com
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",") if not DEBUG else ["*"]
 
 
 # Application definition
@@ -41,6 +39,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'core',
+
+    # ✅ added for Supabase Storage (S3)
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -54,6 +55,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# (Keeping as-is for now, as requested)
 CORS_ALLOW_ALL_ORIGINS = True
 
 
@@ -78,19 +80,14 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
+# ✅ Database (Supabase Postgres) via DATABASE_URL
+# Render will set: DATABASE_URL=postgresql://...
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    "default": dj_database_url.config(default=os.environ.get("DATABASE_URL"))
 }
 
 
 # Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -109,7 +106,6 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
@@ -119,22 +115,35 @@ USE_I18N = True
 
 USE_TZ = True
 
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:3000',
-]
+# ✅ CSRF trusted origins from env (so we can set Vercel URL later)
+# Render will set: CSRF_TRUSTED_ORIGINS=https://*.vercel.app
+CSRF_TRUSTED_ORIGINS = (
+    os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if not DEBUG else []
+)
 
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
-
+# Static files
 STATIC_URL = 'static/'
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
+# ✅ Supabase Storage (S3-compatible) settings for FileField uploads
+# Render will set these environment variables:
+# SUPABASE_S3_ACCESS_KEY, SUPABASE_S3_SECRET_KEY, SUPABASE_S3_BUCKET,
+# SUPABASE_S3_REGION, SUPABASE_S3_ENDPOINT
+AWS_ACCESS_KEY_ID = os.environ.get("SUPABASE_S3_ACCESS_KEY")
+AWS_SECRET_ACCESS_KEY = os.environ.get("SUPABASE_S3_SECRET_KEY")
+AWS_STORAGE_BUCKET_NAME = os.environ.get("SUPABASE_S3_BUCKET")  # e.g. "documents"
+AWS_S3_REGION_NAME = os.environ.get("SUPABASE_S3_REGION")
+AWS_S3_ENDPOINT_URL = os.environ.get("SUPABASE_S3_ENDPOINT")
+AWS_S3_ADDRESSING_STYLE = "path"
+
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+
+# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

@@ -1,0 +1,5 @@
+dj-database-url
+psycopg[binary]
+gunicorn
+django-storages[s3]
+boto3
