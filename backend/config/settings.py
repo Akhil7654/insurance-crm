@@ -24,21 +24,17 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     "rest_framework",
     "corsheaders",
     "core",
-
     # ✅ Supabase Storage (S3)
     "storages",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-
     # ✅ WhiteNoise (serve static files on Render)
     "whitenoise.middleware.WhiteNoiseMiddleware",
-
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -76,6 +72,12 @@ DATABASES = {
     "default": dj_database_url.config(default=os.environ.get("DATABASE_URL"))
 }
 
+# ✅ Supabase pooler / PgBouncer safe settings (fix long loading / hangs)
+DATABASES["default"]["CONN_MAX_AGE"] = 0  # important for Transaction Pooler
+DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
+DATABASES["default"].setdefault("OPTIONS", {})
+DATABASES["default"]["OPTIONS"]["connect_timeout"] = 10  # fail fast instead of hanging
+
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -93,16 +95,15 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # ✅ CSRF trusted origins from env (set Vercel URL later in Render env)
-# Example: CSRF_TRUSTED_ORIGINS=https://*.vercel.app,https://yourapp.vercel.app
 CSRF_TRUSTED_ORIGINS = (
     os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if not DEBUG else []
 )
 
-# ✅ Static files (THIS FIXES YOUR ERROR)
+# ✅ Static files
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# ✅ WhiteNoise storage (optional but recommended)
+# ✅ WhiteNoise storage
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # ✅ Supabase Storage (S3-compatible) for FileField uploads
