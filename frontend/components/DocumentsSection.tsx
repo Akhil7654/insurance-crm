@@ -75,7 +75,7 @@ export default function DocumentsSection({ clientId }: { clientId: number }) {
         <select
           value={documentType}
           onChange={(e) => setDocumentType(e.target.value)}
-          className="w-full border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none p-3 rounded-xl cursor-pointer text-black"
+          className="w-full border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none p-3 rounded-xl cursor-pointer text-white"
         >
           <option value="rc">RC</option>
           <option value="aadhaar">Aadhaar</option>

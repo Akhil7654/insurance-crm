@@ -12,22 +12,35 @@ export default function QuotesSection({
 }) {
   const [company, setCompany] = useState('');
   const [premium, setPremium] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const addQuote = async () => {
-    if (!company || !premium) return;
+    if (!company || !premium || loading) return;
 
-    await createQuote({
-      client: clientId,
-      company_name: company,
-      premium_amount: premium,
-    });
+    try {
+      setLoading(true);
 
-    // 🔥 Better than reload later — for now ok
-    location.reload();
+      await createQuote({
+        client: clientId,
+        company_name: company,
+        premium_amount: premium,
+      });
+
+      // Clear inputs
+      setCompany('');
+      setPremium('');
+
+      // For now reload (later we can improve this)
+      location.reload();
+    } catch {
+      alert('Failed to add quote');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="bg-gray-900 p-4 rounded-xl shadow mt-4 border-gray-800">
+    <div className="bg-gray-900 p-4 rounded-xl shadow mt-4 border border-gray-800">
       <h3 className="text-lg font-semibold mb-3 text-white">🧾 Quotes</h3>
 
       {quotes?.length === 0 && (
@@ -39,7 +52,7 @@ export default function QuotesSection({
       {quotes?.map((q) => (
         <div
           key={q.id}
-          className="flex justify-between border-b py-2 text-sm"
+          className="flex justify-between border-b border-gray-700 py-2 text-sm text-white"
         >
           <span>{q.company_name}</span>
           <span className="font-semibold">
@@ -53,7 +66,7 @@ export default function QuotesSection({
           placeholder="Company Name"
           value={company}
           onChange={(e) => setCompany(e.target.value)}
-          className="w-full border p-2 rounded text-white"
+          className="w-full border border-gray-700 bg-gray-800 p-2 rounded text-white"
         />
 
         <input
@@ -61,14 +74,15 @@ export default function QuotesSection({
           type="number"
           value={premium}
           onChange={(e) => setPremium(e.target.value)}
-          className="w-full border p-2 rounded text-white"
+          className="w-full border border-gray-700 bg-gray-800 p-2 rounded text-white"
         />
 
         <button
           onClick={addQuote}
-          className="w-full bg-blue-600 text-white py-2 rounded"
+          disabled={loading}
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white py-2 rounded transition cursor-pointer"
         >
-          + Add Quote
+          {loading ? 'Adding...' : '+ Add Quote'}
         </button>
       </div>
     </div>
