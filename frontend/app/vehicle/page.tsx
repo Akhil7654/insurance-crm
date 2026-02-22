@@ -17,6 +17,43 @@ function toYYYYMM(d: Date) {
   return `${y}-${m}`;
 }
 
+function ClientsSkeleton() {
+  return (
+    <div className="space-y-3 sm:space-y-4">
+      {[...Array(6)].map((_, i) => (
+        <div
+          key={i}
+          className="bg-gray-900 border border-gray-800 p-4 sm:p-5 rounded-2xl animate-pulse"
+        >
+          <div className="h-5 w-40 bg-gray-800 rounded mb-3" />
+          <div className="h-4 w-56 bg-gray-800 rounded mb-2" />
+          <div className="h-4 w-32 bg-gray-800 rounded" />
+          <div className="mt-4 flex gap-2">
+            <div className="h-9 w-24 bg-gray-800 rounded-xl" />
+            <div className="h-9 w-24 bg-gray-800 rounded-xl" />
+            <div className="h-9 w-24 bg-gray-800 rounded-xl" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SummarySkeleton() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+      <div className="bg-gray-950 border border-gray-800 rounded-xl p-4 animate-pulse">
+        <div className="h-4 w-36 bg-gray-800 rounded mb-2" />
+        <div className="h-8 w-16 bg-gray-800 rounded" />
+      </div>
+      <div className="bg-gray-950 border border-gray-800 rounded-xl p-4 animate-pulse">
+        <div className="h-4 w-36 bg-gray-800 rounded mb-2" />
+        <div className="h-8 w-16 bg-gray-800 rounded" />
+      </div>
+    </div>
+  );
+}
+
 export default function VehicleClientsPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
@@ -24,19 +61,36 @@ export default function VehicleClientsPage() {
 
   const [month, setMonth] = useState<string>(() => toYYYYMM(new Date()));
   const [summary, setSummary] = useState<{ pending: number; missed: number } | null>(null);
+
+  const [loadingClients, setLoadingClients] = useState(true);
+  const [loadingSummary, setLoadingSummary] = useState(true);
+  const [errorClients, setErrorClients] = useState<string | null>(null);
+
   const [loadingRenew, setLoadingRenew] = useState<number | null>(null);
 
   const loadClients = async () => {
-    const data = await getVehicleClients();
-    setClients(data);
+    try {
+      setErrorClients(null);
+      setLoadingClients(true);
+      const data = await getVehicleClients();
+      setClients(data);
+    } catch {
+      setErrorClients('Failed to load vehicle clients');
+      setClients([]);
+    } finally {
+      setLoadingClients(false);
+    }
   };
 
   const loadSummary = async () => {
     try {
+      setLoadingSummary(true);
       const s = await getVehicleRenewalSummary(month);
       setSummary(s);
     } catch {
       setSummary(null);
+    } finally {
+      setLoadingSummary(false);
     }
   };
 
@@ -68,10 +122,8 @@ export default function VehicleClientsPage() {
     }
   };
 
-  // ✅ Set renewal date from card (only if missing)
   const handleSetRenewal = async (e: React.MouseEvent, clientId: number) => {
     e.stopPropagation();
-
     const next = prompt('Enter Renewal Date (YYYY-MM-DD)');
     if (!next) return;
 
@@ -91,7 +143,6 @@ export default function VehicleClientsPage() {
   return (
     <div className="min-h-screen bg-stone-300 p-6">
       <div className="max-w-2xl mx-auto">
-
         {/* HEADER */}
         <motion.div
           initial={{ opacity: 0, y: -12 }}
@@ -111,7 +162,7 @@ export default function VehicleClientsPage() {
           </motion.button>
         </motion.div>
 
-        {/* ✅ RENEWAL CALENDAR */}
+        {/* RENEWAL CALENDAR */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-6">
           <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
             <div>
@@ -127,128 +178,127 @@ export default function VehicleClientsPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-            <button
-              onClick={() => openRenewalList('pending')}
-              className="bg-gray-950 border border-gray-800 rounded-xl p-4 text-left hover:bg-gray-800 transition"
-            >
-              <p className="text-yellow-300 font-bold">Pending Renewals</p>
-              <p className="text-white text-2xl font-extrabold">{summary?.pending ?? 0}</p>
-            </button>
+          {loadingSummary ? (
+            <SummarySkeleton />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+              <button
+                onClick={() => openRenewalList('pending')}
+                className="bg-gray-950 border border-gray-800 rounded-xl p-4 text-left hover:bg-gray-800 transition"
+              >
+                <p className="text-yellow-300 font-bold">Pending Renewals</p>
+                <p className="text-white text-2xl font-extrabold">{summary?.pending ?? 0}</p>
+              </button>
 
-            <button
-              onClick={() => openRenewalList('missed')}
-              className="bg-gray-950 border border-gray-800 rounded-xl p-4 text-left hover:bg-gray-800 transition"
-            >
-              <p className="text-red-400 font-bold">Missed Renewals</p>
-              <p className="text-white text-2xl font-extrabold">{summary?.missed ?? 0}</p>
-            </button>
-          </div>
-        </div>
-
-        {/* ✅ CLIENT CARDS */}
-        <div className="space-y-3 sm:space-y-4">
-          <AnimatePresence>
-            {clients.map((client: any, i) => {
-              const renewalDate = client.vehicle_details?.renewal_date;
-              const needsRenewalDate = !renewalDate;
-
-              return (
-                <motion.div
-                  key={client.id}
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ delay: i * 0.03 }}
-                  whileHover={{ y: -2 }}
-                  onClick={() => router.push(`/vehicle/client/${client.id}`)}
-                  className="bg-gray-900 border border-gray-800 p-4 sm:p-5 rounded-2xl shadow-sm hover:shadow-md cursor-pointer"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-
-                    {/* LEFT INFO */}
-                    <div className="min-w-0">
-                      <p className="font-semibold text-base sm:text-lg text-white truncate">
-                        {client.name}
-                      </p>
-
-                      <p className="text-xs sm:text-sm text-gray-300 mt-1">
-                        {client.mobile} · {client.place}
-                      </p>
-
-                      {renewalDate ? (
-                        <p className="text-xs text-yellow-300 mt-2 font-semibold">
-                          Renewal: {renewalDate}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-red-400 mt-2 font-semibold">
-                          No renewal date set
-                        </p>
-                      )}
-
-                      {client.is_converted && (
-                        <span className="text-xs bg-lime-50 text-green-950 px-2 py-1 rounded-full mt-2 inline-block font-bold">
-                          Converted 🏆
-                        </span>
-                      )}
-                    </div>
-
-                    {/* RIGHT BUTTONS (✅ vertical on mobile) */}
-                    <div
-                      className="flex flex-col w-full gap-2 sm:flex-row sm:w-auto sm:items-center"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {/* ✅ Set Renewal button only if missing */}
-                      {needsRenewalDate && (
-                        <motion.button
-                          whileTap={{ scale: 0.96 }}
-                          disabled={loadingRenew === client.id}
-                          onClick={(e) => handleSetRenewal(e, client.id)}
-                          className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-4 py-2 rounded-xl text-sm w-full sm:w-auto"
-                        >
-                          {loadingRenew === client.id ? 'Saving...' : 'Set Renewal'}
-                        </motion.button>
-                      )}
-
-                      {/* ✅ Convert */}
-                      {!client.is_converted && (
-                        <motion.button
-                          whileTap={{ scale: 0.96 }}
-                          onClick={() => setSelectedClient(client.id)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl text-sm w-full sm:w-auto"
-                        >
-                          Convert
-                        </motion.button>
-                      )}
-
-                      {/* ✅ Delete */}
-                      <motion.button
-                        whileTap={{ scale: 0.96 }}
-                        onClick={(e) => handleDelete(e, client.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-xl text-sm w-full sm:w-auto"
-                      >
-                        Delete
-                      </motion.button>
-                    </div>
-
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-
-          {clients.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center text-gray-500 py-10"
-            >
-              No vehicle clients found.
-            </motion.div>
+              <button
+                onClick={() => openRenewalList('missed')}
+                className="bg-gray-950 border border-gray-800 rounded-xl p-4 text-left hover:bg-gray-800 transition"
+              >
+                <p className="text-red-400 font-bold">Missed Renewals</p>
+                <p className="text-white text-2xl font-extrabold">{summary?.missed ?? 0}</p>
+              </button>
+            </div>
           )}
         </div>
 
-        {/* Convert Modal */}
+        {/* CLIENT CARDS */}
+        <div className="space-y-3 sm:space-y-4">
+          {loadingClients ? (
+            <ClientsSkeleton />
+          ) : errorClients ? (
+            <div className="text-center text-red-600 py-10 font-semibold">
+              {errorClients}
+              <div className="mt-3">
+                <button
+                  onClick={loadClients}
+                  className="bg-black text-white px-4 py-2 rounded-xl"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          ) : clients.length === 0 ? (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center text-gray-500 py-10">
+              No vehicle clients found.
+            </motion.div>
+          ) : (
+            <AnimatePresence>
+              {clients.map((client: any, i) => {
+                const renewalDate = client.vehicle_details?.renewal_date;
+                const needsRenewalDate = !renewalDate;
+
+                return (
+                  <motion.div
+                    key={client.id}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ delay: i * 0.03 }}
+                    whileHover={{ y: -2 }}
+                    onClick={() => router.push(`/vehicle/client/${client.id}`)}
+                    className="bg-gray-900 border border-gray-800 p-4 sm:p-5 rounded-2xl shadow-sm hover:shadow-md cursor-pointer"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-base sm:text-lg text-white truncate">{client.name}</p>
+                        <p className="text-xs sm:text-sm text-gray-300 mt-1">
+                          {client.mobile} · {client.place}
+                        </p>
+
+                        {renewalDate ? (
+                          <p className="text-xs text-yellow-300 mt-2 font-semibold">Renewal: {renewalDate}</p>
+                        ) : (
+                          <p className="text-xs text-red-400 mt-2 font-semibold">No renewal date set</p>
+                        )}
+
+                        {client.is_converted && (
+                          <span className="text-xs bg-lime-50 text-green-950 px-2 py-1 rounded-full mt-2 inline-block font-bold">
+                            Converted 🏆
+                          </span>
+                        )}
+                      </div>
+
+                      <div
+                        className="flex flex-col w-full gap-2 sm:flex-row sm:w-auto sm:items-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {needsRenewalDate && (
+                          <motion.button
+                            whileTap={{ scale: 0.96 }}
+                            disabled={loadingRenew === client.id}
+                            onClick={(e) => handleSetRenewal(e, client.id)}
+                            className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-4 py-2 rounded-xl text-sm w-full sm:w-auto"
+                          >
+                            {loadingRenew === client.id ? 'Saving...' : 'Set Renewal'}
+                          </motion.button>
+                        )}
+
+                        {!client.is_converted && (
+                          <motion.button
+                            whileTap={{ scale: 0.96 }}
+                            onClick={() => setSelectedClient(client.id)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl text-sm w-full sm:w-auto"
+                          >
+                            Convert
+                          </motion.button>
+                        )}
+
+                        <motion.button
+                          whileTap={{ scale: 0.96 }}
+                          onClick={(e) => handleDelete(e, client.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-xl text-sm w-full sm:w-auto"
+                        >
+                          Delete
+                        </motion.button>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          )}
+        </div>
+
         {selectedClient && (
           <ConvertModal
             clientId={selectedClient}
