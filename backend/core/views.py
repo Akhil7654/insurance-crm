@@ -91,7 +91,7 @@ class NoteViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def upcoming(self, request):
         today = now().date()
-        next_week = today + timedelta(days=30)
+        next_week = today + timedelta(days=180)
         notes = self.queryset.filter(
             follow_up_date__gt=today,
             follow_up_date__lte=next_week,
