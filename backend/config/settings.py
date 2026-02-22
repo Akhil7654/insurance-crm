@@ -45,7 +45,11 @@ MIDDLEWARE = [
 ]
 
 # ⚠️ Keep for now, but later set specific Vercel domain(s)
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
+
+CORS_ALLOWED_ORIGINS = [
+    "https://insurance-crm-five.vercel.app",
+]
 
 ROOT_URLCONF = "config.urls"
 
