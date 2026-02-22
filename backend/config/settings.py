@@ -15,7 +15,12 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret")
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 # ✅ ALLOWED_HOSTS from env (Render: your-backend.onrender.com)
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",") if not DEBUG else ["*"]
+# Fix: if env var is empty or missing, default to ["*"] for debugging
+ALLOWED_HOSTS_ENV = os.environ.get("ALLOWED_HOSTS", "")
+if ALLOWED_HOSTS_ENV:
+    ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS_ENV.split(",") if h.strip()]
+else:
+    ALLOWED_HOSTS = ["*"]  # temporary for debugging
 
 INSTALLED_APPS = [
     "django.contrib.admin",
