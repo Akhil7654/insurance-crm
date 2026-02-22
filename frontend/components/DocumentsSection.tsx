@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getClientDocuments, uploadDocument, deleteDocument } from '@/lib/api';
 
 type Document = {
@@ -10,15 +10,27 @@ type Document = {
   uploaded_at: string;
 };
 
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
+
 export default function DocumentsSection({ clientId }: { clientId: number }) {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [documentType, setDocumentType] = useState('rc');
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // backend origin (example: https://xyz.onrender.com)
+  const BACKEND_ORIGIN = useMemo(() => {
+    try {
+      return new URL(API_BASE).origin;
+    } catch {
+      return 'http://127.0.0.1:8000';
+    }
+  }, []);
+
   useEffect(() => {
     if (!clientId) return;
-    getClientDocuments(clientId).then(setDocuments);
+    getClientDocuments(clientId).then(setDocuments).catch(() => setDocuments([]));
   }, [clientId]);
 
   const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -59,16 +71,15 @@ export default function DocumentsSection({ clientId }: { clientId: number }) {
         Client Documents
       </h2>
 
-      {/* Upload Form */}
       <form onSubmit={handleUpload} className="space-y-4 mb-6 text-white">
         <select
           value={documentType}
           onChange={(e) => setDocumentType(e.target.value)}
-          className="w-full border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none p-3 rounded-xl cursor-pointer"
+          className="w-full border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none p-3 rounded-xl cursor-pointer text-black"
         >
-          <option value="rc" className='text-black'>RC</option>
-          <option value="aadhaar" className='text-black'>Aadhaar</option>
-          <option value="policy" className='text-black'>Old Policy</option>
+          <option value="rc">RC</option>
+          <option value="aadhaar">Aadhaar</option>
+          <option value="policy">Old Policy</option>
         </select>
 
         <input
@@ -81,28 +92,25 @@ export default function DocumentsSection({ clientId }: { clientId: number }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold shadow transition cursor-pointer"
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white py-2.5 rounded-xl font-semibold shadow transition cursor-pointer"
         >
           {loading ? 'Uploading...' : '+ Upload Document'}
         </button>
       </form>
 
-      {/* Document List */}
       {documents.length === 0 ? (
-        <p className="text-gray-500 text-sm">
-          No documents uploaded yet
-        </p>
+        <p className="text-gray-500 text-sm">No documents uploaded yet</p>
       ) : (
         <ul className="space-y-3">
           {documents.map((doc) => {
             const fileUrl = doc.file.startsWith('http')
               ? doc.file
-              : `http://127.0.0.1:8000${doc.file}`;
+              : `${BACKEND_ORIGIN}${doc.file}`; // ✅ no localhost
 
             return (
               <li
                 key={doc.id}
-                className="flex justify-between items-center bg-gray-950 border border-gray-200 p-4 rounded-xl hover:shadow-sm transition"
+                className="flex justify-between items-center bg-gray-950 border border-gray-800 p-4 rounded-xl hover:shadow-sm transition"
               >
                 <div>
                   <p className="font-medium text-white capitalize">
@@ -118,14 +126,14 @@ export default function DocumentsSection({ clientId }: { clientId: number }) {
                     href={fileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline text-sm font-medium"
+                    className="text-blue-400 hover:underline text-sm font-medium"
                   >
                     View
                   </a>
 
                   <button
                     onClick={() => handleDelete(doc.id)}
-                    className="text-red-600 hover:text-red-700 text-sm cursor-pointer"
+                    className="text-red-400 hover:text-red-500 text-sm cursor-pointer"
                   >
                     🗑️
                   </button>
