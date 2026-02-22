@@ -1,86 +1,148 @@
 'use client';
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from 'react';
+import { getClientDocuments, uploadDocument, deleteDocument } from '@/lib/api';
+
+type Document = {
+  id: number;
+  document_type: string;
+  file: string;
+  uploaded_at: string;
+};
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
+  process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 
-export default function ConvertModal({ clientId, onClose, onSuccess }: any) {
-  const [form, setForm] = useState({
-    posp_code: "",
-    customer_name: "",
-    company_name: "",
-    premium_amount: "",
-    policy_number: "",
-    customer_mobile: "",
-  });
+export default function DocumentsSection({ clientId }: { clientId: number }) {
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [documentType, setDocumentType] = useState('rc');
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const [saving, setSaving] = useState(false);
+  // backend origin (example: https://xyz.onrender.com)
+  const BACKEND_ORIGIN = useMemo(() => {
+    try {
+      return new URL(API_BASE).origin;
+    } catch {
+      return 'http://127.0.0.1:8000';
+    }
+  }, []);
 
-  const handleChange = (e: any) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  useEffect(() => {
+    if (!clientId) return;
+    getClientDocuments(clientId).then(setDocuments).catch(() => setDocuments([]));
+  }, [clientId]);
+
+  const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!file) return alert('Please select a file');
+
+    const formData = new FormData();
+    formData.append('client', String(clientId));
+    formData.append('document_type', documentType);
+    formData.append('file', file);
+
+    try {
+      setLoading(true);
+      const newDoc = await uploadDocument(formData);
+      setDocuments((prev) => [newDoc, ...prev]);
+      setFile(null);
+    } catch {
+      alert('Upload failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = async () => {
+  const handleDelete = async (id: number) => {
+    const ok = confirm('Delete this document?');
+    if (!ok) return;
     try {
-      setSaving(true);
-
-      const res = await fetch(`${API_BASE}/convert-client/${clientId}/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          premium_amount: Number(form.premium_amount || 0), // optional safe convert
-        }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Convert failed");
-      }
-
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      alert("Convert failed: " + (err.message || "Unknown error"));
-    } finally {
-      setSaving(false);
+      await deleteDocument(id);
+      setDocuments((prev) => prev.filter((d) => d.id !== id));
+    } catch {
+      alert('Delete failed');
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-      <div className="bg-black p-6 rounded-lg w-96 space-y-3 text-white">
-        <h2 className="text-xl font-bold">Convert Lead</h2>
+    <div className="bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-800">
+      <h2 className="text-xl font-semibold mb-5 text-white">
+        Client Documents
+      </h2>
 
-        {Object.keys(form).map((key) => (
-          <input
-            key={key}
-            name={key}
-            placeholder={key.replace("_", " ")}
-            value={(form as any)[key]}
-            onChange={handleChange}
-            className="w-full border p-2 rounded text-black"
-          />
-        ))}
+      <form onSubmit={handleUpload} className="space-y-4 mb-6 text-white">
+        <select
+          value={documentType}
+          onChange={(e) => setDocumentType(e.target.value)}
+          className="w-full border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none p-3 rounded-xl cursor-pointer text-black"
+        >
+          <option value="rc">RC</option>
+          <option value="aadhaar">Aadhaar</option>
+          <option value="policy">Old Policy</option>
+        </select>
 
-        <div className="flex gap-2">
-          <button
-            onClick={handleSubmit}
-            disabled={saving}
-            className="bg-green-500 disabled:opacity-60 text-white px-4 py-2 rounded cursor-pointer"
-          >
-            {saving ? "Saving..." : "Save"}
-          </button>
+        <input
+          type="file"
+          required
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          className="w-full border border-gray-200 p-2 rounded-xl cursor-pointer"
+        />
 
-          <button
-            onClick={onClose}
-            className="bg-gray-400 text-black px-4 py-2 rounded cursor-pointer"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white py-2.5 rounded-xl font-semibold shadow transition cursor-pointer"
+        >
+          {loading ? 'Uploading...' : '+ Upload Document'}
+        </button>
+      </form>
+
+      {documents.length === 0 ? (
+        <p className="text-gray-500 text-sm">No documents uploaded yet</p>
+      ) : (
+        <ul className="space-y-3">
+          {documents.map((doc) => {
+            const fileUrl = doc.file.startsWith('http')
+              ? doc.file
+              : `${BACKEND_ORIGIN}${doc.file}`; // ✅ no localhost
+
+            return (
+              <li
+                key={doc.id}
+                className="flex justify-between items-center bg-gray-950 border border-gray-800 p-4 rounded-xl hover:shadow-sm transition"
+              >
+                <div>
+                  <p className="font-medium text-white capitalize">
+                    {doc.document_type.replace('_', ' ')}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(doc.uploaded_at).toLocaleDateString()}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <a
+                    href={fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:underline text-sm font-medium"
+                  >
+                    View
+                  </a>
+
+                  <button
+                    onClick={() => handleDelete(doc.id)}
+                    className="text-red-400 hover:text-red-500 text-sm cursor-pointer"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }
