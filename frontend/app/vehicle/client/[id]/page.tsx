@@ -75,7 +75,7 @@ export default function ClientHistoryPage() {
   if (!client)
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-300">
-        <p className="text-gray-600 text-lg">Loading client details...</p>
+        <p className="text-gray-800 text-lg font-bold font-sans">Just a Moment - Loading Client Details..</p>
       </div>
     );
 

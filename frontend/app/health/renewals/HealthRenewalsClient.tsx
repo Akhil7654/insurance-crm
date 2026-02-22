@@ -9,18 +9,46 @@ import {
   deleteClientFull,
 } from '@/lib/api';
 
+function RenewalsSkeleton() {
+  return (
+    <div className="space-y-3">
+      {[...Array(6)].map((_, i) => (
+        <div
+          key={i}
+          className="bg-gray-950 border border-gray-800 rounded-2xl p-4 sm:p-5 animate-pulse"
+        >
+          <div className="h-5 w-40 bg-gray-800 rounded mb-3" />
+          <div className="h-4 w-56 bg-gray-800 rounded mb-2" />
+          <div className="h-4 w-32 bg-gray-800 rounded mb-2" />
+          <div className="h-4 w-48 bg-gray-800 rounded mb-4" />
+          <div className="flex gap-2">
+            <div className="h-9 w-24 bg-gray-800 rounded-xl" />
+            <div className="h-9 w-24 bg-gray-800 rounded-xl" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function HealthRenewalsListPage() {
   const sp = useSearchParams();
   const month = sp.get('month') || '';
   const status = (sp.get('status') || 'pending') as 'pending' | 'missed';
 
   const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingList, setLoadingList] = useState(true);
+  const [loadingAction, setLoadingAction] = useState(false);
 
   const load = async () => {
     if (!month) return;
-    const data = await getHealthRenewals(month, status);
-    setItems(data);
+    try {
+      setLoadingList(true);
+      const data = await getHealthRenewals(month, status);
+      setItems(data);
+    } finally {
+      setLoadingList(false);
+    }
   };
 
   useEffect(() => {
@@ -33,14 +61,14 @@ export default function HealthRenewalsListPage() {
     if (!next) return;
 
     try {
-      setLoading(true);
+      setLoadingAction(true);
       await renewHealthClient(clientId, next);
       await load();
       alert('Renewed ✅ moved to new date');
     } catch {
       alert('Renew failed');
     } finally {
-      setLoading(false);
+      setLoadingAction(false);
     }
   };
 
@@ -49,14 +77,14 @@ export default function HealthRenewalsListPage() {
     if (!ok) return;
 
     try {
-      setLoading(true);
+      setLoadingAction(true);
       await deleteClientFull(clientId);
       await load();
       alert('Client deleted completely ✅');
     } catch {
       alert('Delete failed');
     } finally {
-      setLoading(false);
+      setLoadingAction(false);
     }
   };
 
@@ -64,81 +92,59 @@ export default function HealthRenewalsListPage() {
     <div className="min-h-screen bg-stone-300 p-6">
       <div className="max-w-2xl mx-auto bg-gray-900 border border-gray-800 rounded-2xl p-6">
 
-        {/* HEADER */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-          className="mb-5"
-        >
-          <h1 className="text-xl sm:text-2xl font-bold text-white">
-            Health Renewals — {status.toUpperCase()}
-          </h1>
-          <p className="text-gray-400 mt-1 text-sm">Month: {month}</p>
-        </motion.div>
+        <h1 className="text-xl sm:text-2xl font-bold text-white mb-2">
+          Health Renewals — {status.toUpperCase()}
+        </h1>
+        <p className="text-gray-400 mb-5 text-sm">Month: {month}</p>
 
-        {/* EMPTY STATE */}
-        {items.length === 0 ? (
+        {loadingList ? (
+          <RenewalsSkeleton />
+        ) : items.length === 0 ? (
           <p className="text-gray-400">No items found.</p>
         ) : (
           <div className="space-y-3">
             <AnimatePresence>
-              {items.map((it: any, i: number) => (
+              {items.map((it: any) => (
                 <motion.div
                   key={it.client.id}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ delay: i * 0.03 }}
+                  exit={{ opacity: 0 }}
                   className="bg-gray-950 border border-gray-800 rounded-2xl p-4 sm:p-5"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-
-                    {/* LEFT INFO */}
-                    <div className="min-w-0">
-                      <p className="text-white font-bold text-base sm:text-lg truncate">
-                        {it.client.name}
-                      </p>
-
-                      <p className="text-gray-400 text-xs sm:text-sm mt-1">
+                  <div className="flex justify-between items-start gap-4">
+                    <div>
+                      <p className="text-white font-bold">{it.client.name}</p>
+                      <p className="text-gray-400 text-sm">
                         {it.client.mobile} · {it.client.place}
                       </p>
-
-                      <p className="text-yellow-300 text-xs sm:text-sm mt-2 font-semibold">
+                      <p className="text-yellow-300 text-sm mt-2">
                         Renewal Date: {it.renewal_date || '-'}
                       </p>
-
-                      <div className="text-gray-300 text-xs mt-3">
+                      <p className="text-gray-300 text-xs mt-2">
                         Floater: {it.floater_type} | Ages: {it.ages}
-                      </div>
+                      </p>
                     </div>
 
-                    {/* RIGHT BUTTONS (✅ vertical on mobile) */}
-                    <div
-                      className="flex flex-col w-full gap-2 sm:flex-row sm:w-auto sm:justify-end"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <motion.button
-                        whileTap={{ scale: 0.96 }}
-                        disabled={loading}
+                    <div className="flex gap-2">
+                      <button
+                        disabled={loadingAction}
                         onClick={() => onRenew(it.client.id)}
-                        className="bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white px-4 py-2 rounded-xl text-sm font-semibold w-full sm:w-auto"
+                        className="bg-green-600 text-white px-3 py-2 rounded-xl text-sm"
                       >
                         Renew
-                      </motion.button>
+                      </button>
 
                       {status === 'missed' && (
-                        <motion.button
-                          whileTap={{ scale: 0.96 }}
-                          disabled={loading}
+                        <button
+                          disabled={loadingAction}
                           onClick={() => onDeleteClient(it.client.id)}
-                          className="bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white px-4 py-2 rounded-xl text-sm font-semibold w-full sm:w-auto"
+                          className="bg-red-600 text-white px-3 py-2 rounded-xl text-sm"
                         >
                           Delete Client
-                        </motion.button>
+                        </button>
                       )}
                     </div>
-
                   </div>
                 </motion.div>
               ))}
