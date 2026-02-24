@@ -107,7 +107,7 @@ export default function AddHealthClientPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-xl mx-auto bg-black p-6 rounded-xl shadow">
+      <div className="max-w-xl mx-auto bg-indigo-950 p-6 rounded-xl shadow">
         <h2 className="text-xl font-bold mb-4 text-white">
           Add Health Insurance Client
         </h2>
@@ -118,7 +118,7 @@ export default function AddHealthClientPage() {
             placeholder="Client Name"
             value={form.name}
             onChange={handleChange}
-            className="w-full border p-3 rounded"
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic"
           />
 
           <input
@@ -126,7 +126,7 @@ export default function AddHealthClientPage() {
             placeholder="Mobile Number"
             value={form.mobile}
             onChange={handleChange}
-            className="w-full border p-3 rounded"
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic"
           />
 
           <input
@@ -134,14 +134,14 @@ export default function AddHealthClientPage() {
             placeholder="Place"
             value={form.place}
             onChange={handleChange}
-            className="w-full border p-3 rounded"
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic"
           />
 
           <select
             name="floater_type"
             value={form.floater_type}
             onChange={handleChange}
-            className="w-full border p-3 rounded"
+            className="w-full border border-white p-3 rounded text-teal-400 font-semibold"
           >
             <option className="text-black" value="individual">
               Individual
@@ -160,7 +160,7 @@ export default function AddHealthClientPage() {
             }
             value={form.agesText}
             onChange={handleChange}
-            className="w-full border p-3 rounded"
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic"
           />
 
           {/* ✅ New Renewal Date field */}
@@ -172,7 +172,7 @@ export default function AddHealthClientPage() {
             name="renewal_date"
             value={form.renewal_date}
             onChange={handleChange}
-            className="w-full border p-3 rounded"
+            className="w-full border border-white p-3 rounded text-yellow-600 font-semibold"
             placeholder="Renewal Date"
           />
 
@@ -181,7 +181,7 @@ export default function AddHealthClientPage() {
             placeholder="PED (Pre-existing Disease) details..."
             value={form.ped}
             onChange={handleChange}
-            className="w-full border p-3 rounded min-h-120px"
+            className="w-full border p-3 rounded min-h-120px placeholder:text-yellow-600 font-semibold italic"
           />
 
           <button
@@ -202,7 +202,7 @@ export default function AddHealthClientPage() {
                 placeholder="Note details..."
                 value={note.text}
                 onChange={(e) => setNote({ ...note, text: e.target.value })}
-                className="w-full border p-3 rounded mb-3"
+                className="w-full border p-3 rounded mb-3 placeholder:text-yellow-600 font-semibold italic"
               />
 
               <input
@@ -211,10 +211,10 @@ export default function AddHealthClientPage() {
                 onChange={(e) =>
                   setNote({ ...note, follow_up_date: e.target.value })
                 }
-                className="w-full border p-3 rounded mb-3"
+                className="w-full border p-3 rounded mb-3 text-yellow-600 font-semibold"
               />
 
-              <label className="flex items-center gap-2 mb-3 text-white">
+              <label className="flex items-center gap-2 mb-3 text-teal-400">
                 <input
                   type="checkbox"
                   checked={note.reminder}

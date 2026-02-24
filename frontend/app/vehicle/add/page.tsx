@@ -78,12 +78,12 @@ export default function VehiclePage() {
         <h2 className="text-xl font-bold mb-4">Add Vehicle Insurance Client</h2>
 
         <div className="space-y-4">
-          <input name="name" placeholder="Client Name" value={form.name} onChange={handleChange} className="w-full border p-3 rounded" />
-          <input name="mobile" placeholder="Mobile Number" value={form.mobile} onChange={handleChange} className="w-full border p-3 rounded" />
-          <input name="place" placeholder="Place" value={form.place} onChange={handleChange} className="w-full border p-3 rounded" />
-          <input name="vehicle_type" placeholder="Vehicle Type (Car / Bike)" value={form.vehicle_type} onChange={handleChange} className="w-full border p-3 rounded" />
+          <input name="name" placeholder="Client Name" value={form.name} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic" />
+          <input name="mobile" placeholder="Mobile Number" value={form.mobile} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic" />
+          <input name="place" placeholder="Place" value={form.place} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic" />
+          <input name="vehicle_type" placeholder="Vehicle Type (Car / Bike)" value={form.vehicle_type} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic" />
 
-          <select name="insurance_cover" value={form.insurance_cover} onChange={handleChange} className="w-full border p-3 rounded">
+          <select name="insurance_cover" value={form.insurance_cover} onChange={handleChange} className="w-full border border-white p-3 rounded text-teal-400 font-semibold italic">
             <option className="text-black" value="full">Full Insurance</option>
             <option className="text-black" value="third_party">Third Party</option>
           </select>
@@ -98,7 +98,7 @@ export default function VehiclePage() {
             name="renewal_date"
             value={form.renewal_date}
             onChange={handleChange}
-            className="w-full border p-3 rounded"
+            className="w-full border border-white p-3 rounded text-yellow-600 font-semibold"
           />
 
           <button onClick={handleSubmit} disabled={loading} className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold">
@@ -117,7 +117,7 @@ export default function VehiclePage() {
               />
 
               {/* ✅ Label added for follow-up date */}
-              <label htmlFor="follow_up_date" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="follow_up_date" className="block text-sm font-medium text-white mb-1">
                 Follow-up Date
               </label>
               <input
@@ -128,7 +128,7 @@ export default function VehiclePage() {
                 className="w-full border p-3 rounded mb-3"
               />
 
-              <label className="flex items-center gap-2 mb-3">
+              <label className="flex items-center gap-2 mb-3 text-teal-400 font-semibold">
                 <input
                   type="checkbox"
                   checked={note.reminder}
