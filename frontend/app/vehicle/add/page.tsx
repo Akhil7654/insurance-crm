@@ -107,25 +107,22 @@ export default function VehiclePage() {
 
           {clientId && (
             <div className="mt-6 border-t pt-4">
-              <h3 className="text-lg font-semibold mb-2">Add Follow-up Note</h3>
+              <h3 className="text-lg font-semibold mb-2 text-white">Add Follow-up Note</h3>
 
               <textarea
                 placeholder="Note details..."
                 value={note.text}
                 onChange={(e) => setNote({ ...note, text: e.target.value })}
-                className="w-full border p-3 rounded mb-3"
+                className="w-full border p-3 rounded mb-3 placeholder:text-yellow-600 font-semibold italic"
               />
 
-              {/* ✅ Label added for follow-up date */}
-              <label htmlFor="follow_up_date" className="block text-sm font-medium text-white mb-1">
-                Follow-up Date
-              </label>
+        
               <input
                 type="date"
                 id="follow_up_date"
                 value={note.follow_up_date}
                 onChange={(e) => setNote({ ...note, follow_up_date: e.target.value })}
-                className="w-full border p-3 rounded mb-3"
+                className="w-full border p-3 rounded mb-3 text-yellow-600 font-semibold"
               />
 
               <label className="flex items-center gap-2 mb-3 text-teal-400 font-semibold">

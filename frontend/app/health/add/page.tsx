@@ -214,7 +214,7 @@ export default function AddHealthClientPage() {
                 className="w-full border p-3 rounded mb-3 text-yellow-600 font-semibold"
               />
 
-              <label className="flex items-center gap-2 mb-3 text-teal-400">
+              <label className="flex items-center gap-2 mb-3 text-teal-400 font-semibold">
                 <input
                   type="checkbox"
                   checked={note.reminder}
