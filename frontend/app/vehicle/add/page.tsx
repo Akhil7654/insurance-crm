@@ -74,8 +74,8 @@ export default function VehiclePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-xl mx-auto bg-black p-6 rounded-xl shadow">
-        <h2 className="text-xl font-bold mb-4">Add Vehicle Insurance Client</h2>
+      <div className="max-w-xl mx-auto bg-indigo-950 p-6 rounded-xl shadow">
+        <h2 className="text-xl font-bold mb-4 text-white">Add Vehicle Insurance Client</h2>
 
         <div className="space-y-4">
           <input name="name" placeholder="Client Name" value={form.name} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic" />
