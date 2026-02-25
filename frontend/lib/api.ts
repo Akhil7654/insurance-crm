@@ -108,6 +108,24 @@ export async function createQuote(data: any) {
   return res.json();
 }
 
+export async function updateQuote(id: number, data: any) {
+  const res = await fetch(`${API_BASE}/quotes/${id}/`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update quote');
+  return res.json();
+}
+
+export async function deleteQuote(id: number) {
+  const res = await fetch(`${API_BASE}/quotes/${id}/`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to delete quote');
+  return true;
+}
+
 // ---------------- DOCUMENTS (VEHICLE ONLY) ----------------
 export async function getClientDocuments(clientId: number) {
   const res = await fetch(`${API_BASE}/documents/?client=${clientId}`);

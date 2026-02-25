@@ -78,10 +78,10 @@ export default function VehiclePage() {
         <h2 className="text-xl font-bold mb-4 text-white">Add Vehicle Insurance Client</h2>
 
         <div className="space-y-4">
-          <input name="name" placeholder="Client Name" value={form.name} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic" />
-          <input name="mobile" placeholder="Mobile Number" value={form.mobile} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic" />
-          <input name="place" placeholder="Place" value={form.place} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic" />
-          <input name="vehicle_type" placeholder="Vehicle Type (Car / Bike)" value={form.vehicle_type} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic" />
+          <input name="name" placeholder="Client Name" value={form.name} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
+          <input name="mobile" placeholder="Mobile Number" value={form.mobile} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
+          <input name="place" placeholder="Place" value={form.place} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
+          <input name="vehicle_type" placeholder="Vehicle Type (Car / Bike)" value={form.vehicle_type} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
 
           <select name="insurance_cover" value={form.insurance_cover} onChange={handleChange} className="w-full border border-white p-3 rounded text-teal-400 font-semibold italic">
             <option className="text-black" value="full">Full Insurance</option>
@@ -113,7 +113,7 @@ export default function VehiclePage() {
                 placeholder="Note details..."
                 value={note.text}
                 onChange={(e) => setNote({ ...note, text: e.target.value })}
-                className="w-full border p-3 rounded mb-3 placeholder:text-yellow-600 font-semibold italic"
+                className="w-full border p-3 rounded mb-3 placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
               />
 
         

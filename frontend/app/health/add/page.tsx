@@ -118,7 +118,7 @@ export default function AddHealthClientPage() {
             placeholder="Client Name"
             value={form.name}
             onChange={handleChange}
-            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic"
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
           />
 
           <input
@@ -126,7 +126,7 @@ export default function AddHealthClientPage() {
             placeholder="Mobile Number"
             value={form.mobile}
             onChange={handleChange}
-            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic"
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
           />
 
           <input
@@ -134,7 +134,7 @@ export default function AddHealthClientPage() {
             placeholder="Place"
             value={form.place}
             onChange={handleChange}
-            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic"
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
           />
 
           <select
@@ -160,7 +160,7 @@ export default function AddHealthClientPage() {
             }
             value={form.agesText}
             onChange={handleChange}
-            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic"
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
           />
 
           {/* ✅ New Renewal Date field */}
@@ -181,7 +181,7 @@ export default function AddHealthClientPage() {
             placeholder="PED (Pre-existing Disease) details..."
             value={form.ped}
             onChange={handleChange}
-            className="w-full border p-3 rounded min-h-120px placeholder:text-yellow-600 font-semibold italic"
+            className="w-full border p-3 rounded min-h-120px placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
           />
 
           <button
@@ -202,7 +202,7 @@ export default function AddHealthClientPage() {
                 placeholder="Note details..."
                 value={note.text}
                 onChange={(e) => setNote({ ...note, text: e.target.value })}
-                className="w-full border p-3 rounded mb-3 placeholder:text-yellow-600 font-semibold italic"
+                className="w-full border p-3 rounded mb-3 placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
               />
 
               <input
