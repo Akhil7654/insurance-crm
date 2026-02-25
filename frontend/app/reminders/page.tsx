@@ -25,11 +25,16 @@ function RemindersSkeleton() {
 export default function ReminderDashboard() {
   const [notes, setNotes] = useState<any[]>([]);
   const [hideOverdue, setHideOverdue] = useState(true);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
+
+  // ✅ NEW ROUTING FUNCTION
+  const routeToClient = (n: any) => {
+    const type = n.client_insurance_type || 'vehicle';
+    router.push(`/${type}/client/${n.client}`);
+  };
 
   const load = async () => {
     try {
@@ -50,7 +55,8 @@ export default function ReminderDashboard() {
 
       combined.sort(
         (a: any, b: any) =>
-          new Date(a.follow_up_date).getTime() - new Date(b.follow_up_date).getTime()
+          new Date(a.follow_up_date).getTime() -
+          new Date(b.follow_up_date).getTime()
       );
 
       setNotes(combined);
@@ -98,6 +104,7 @@ export default function ReminderDashboard() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-3xl mx-auto">
+
         <motion.div
           initial={{ opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}
@@ -105,7 +112,9 @@ export default function ReminderDashboard() {
           className="mb-6"
         >
           <h1 className="text-3xl font-bold text-gray-800">Reminder Dashboard</h1>
-          <p className="text-gray-500 mt-1">Track upcoming and overdue client follow-ups</p>
+          <p className="text-gray-500 mt-1">
+            Track upcoming and overdue client follow-ups
+          </p>
         </motion.div>
 
         {loading ? (
@@ -143,13 +152,7 @@ export default function ReminderDashboard() {
 
                 <AnimatePresence>
                   {!hideOverdue && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="space-y-4 overflow-hidden"
-                    >
+                    <motion.div className="space-y-4 overflow-hidden">
                       {overdueNotes.map((n: any, i) => (
                         <motion.div
                           key={n.id}
@@ -158,7 +161,7 @@ export default function ReminderDashboard() {
                           exit={{ opacity: 0 }}
                           transition={{ delay: i * 0.05 }}
                           whileHover={{ scale: 1.02 }}
-                          onClick={() => router.push(`/vehicle/client/${n.client}`)}
+                          onClick={() => routeToClient(n)}   
                           className="bg-gray-900 border rounded-2xl shadow-sm hover:shadow-md cursor-pointer p-5 border-gray-800"
                         >
                           <div className="flex justify-between items-start gap-4">
@@ -204,7 +207,7 @@ export default function ReminderDashboard() {
                     exit={{ opacity: 0 }}
                     transition={{ delay: i * 0.05 }}
                     whileHover={{ scale: 1.02 }}
-                    onClick={() => router.push(`/vehicle/client/${n.client}`)}
+                    onClick={() => routeToClient(n)}   
                     className="bg-gray-900 border rounded-2xl shadow-sm hover:shadow-md cursor-pointer p-5 border-gray-800"
                   >
                     <div className="flex justify-between items-start gap-4">
@@ -236,7 +239,6 @@ export default function ReminderDashboard() {
               </AnimatePresence>
             </div>
 
-            {/* EMPTY */}
             {notes.length === 0 && (
               <motion.div
                 initial={{ opacity: 0 }}

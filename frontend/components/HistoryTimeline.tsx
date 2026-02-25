@@ -40,7 +40,7 @@ export default function HistoryTimeline({
                 <textarea
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  className="w-full border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none p-3 rounded-xl mb-3"
+                  className="w-full border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none p-3 rounded-xl mb-3 text-white"
                 />
 
                 <div className="flex gap-3">
