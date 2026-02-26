@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   getHealthRenewals,
@@ -32,6 +32,7 @@ function RenewalsSkeleton() {
 }
 
 export default function HealthRenewalsListPage() {
+  const router = useRouter();
   const sp = useSearchParams();
   const month = sp.get('month') || '';
   const status = (sp.get('status') || 'pending') as 'pending' | 'missed';
@@ -88,10 +89,13 @@ export default function HealthRenewalsListPage() {
     }
   };
 
+  const goToClient = (clientId: number) => {
+    router.push(`/health/client/${clientId}`);
+  };
+
   return (
     <div className="min-h-screen bg-stone-300 p-6">
       <div className="max-w-2xl mx-auto bg-gray-900 border border-gray-800 rounded-2xl p-6">
-
         <h1 className="text-xl sm:text-2xl font-bold text-white mb-2">
           Health Renewals — {status.toUpperCase()}
         </h1>
@@ -113,8 +117,16 @@ export default function HealthRenewalsListPage() {
                   className="bg-gray-950 border border-gray-800 rounded-2xl p-4 sm:p-5"
                 >
                   <div className="flex justify-between items-start gap-4">
-                    <div>
-                      <p className="text-white font-bold">{it.client.name}</p>
+                    {/* ✅ Clickable client info area */}
+                    <button
+                      type="button"
+                      onClick={() => goToClient(it.client.id)}
+                      className="text-left flex-1 cursor-pointer"
+                      title="Open client"
+                    >
+                      <p className="text-white font-bold hover:underline">
+                        {it.client.name}
+                      </p>
                       <p className="text-gray-400 text-sm">
                         {it.client.mobile} · {it.client.place}
                       </p>
@@ -124,12 +136,15 @@ export default function HealthRenewalsListPage() {
                       <p className="text-gray-300 text-xs mt-2">
                         Floater: {it.floater_type} | Ages: {it.ages}
                       </p>
-                    </div>
+                    </button>
 
                     <div className="flex gap-2">
                       <button
                         disabled={loadingAction}
-                        onClick={() => onRenew(it.client.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRenew(it.client.id);
+                        }}
                         className="bg-green-600 text-white px-3 py-2 rounded-xl text-sm"
                       >
                         Renew
@@ -138,7 +153,10 @@ export default function HealthRenewalsListPage() {
                       {status === 'missed' && (
                         <button
                           disabled={loadingAction}
-                          onClick={() => onDeleteClient(it.client.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteClient(it.client.id);
+                          }}
                           className="bg-red-600 text-white px-3 py-2 rounded-xl text-sm"
                         >
                           Delete Client

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   getVehicleRenewals,
   renewVehicleClient,
@@ -30,6 +30,7 @@ function RenewalsSkeleton() {
 }
 
 export default function VehicleRenewalsListPage() {
+  const router = useRouter();
   const sp = useSearchParams();
   const month = sp.get('month') || '';
   const status = (sp.get('status') || 'pending') as 'pending' | 'missed';
@@ -88,6 +89,10 @@ export default function VehicleRenewalsListPage() {
     }
   };
 
+  const goToClient = (clientId: number) => {
+    router.push(`/vehicle/client/${clientId}`);
+  };
+
   return (
     <div className="min-h-screen bg-stone-300 p-6">
       <div className="max-w-2xl mx-auto bg-gray-900 border border-gray-800 rounded-2xl p-6">
@@ -108,8 +113,14 @@ export default function VehicleRenewalsListPage() {
                 className="bg-gray-950 border border-gray-800 rounded-xl p-4"
               >
                 <div className="flex justify-between items-start gap-4">
-                  <div>
-                    <p className="text-white font-bold">
+                  {/* ✅ Clickable client info area */}
+                  <button
+                    type="button"
+                    onClick={() => goToClient(it.client.id)}
+                    className="text-left flex-1 cursor-pointer"
+                    title="Open client"
+                  >
+                    <p className="text-white font-bold hover:underline">
                       {it.client.name}
                     </p>
                     <p className="text-gray-400 text-sm">
@@ -121,12 +132,15 @@ export default function VehicleRenewalsListPage() {
                     <p className="text-gray-300 text-xs mt-2">
                       Vehicle: {it.vehicle_type} | Cover: {it.insurance_cover}
                     </p>
-                  </div>
+                  </button>
 
                   <div className="flex gap-2">
                     <button
                       disabled={loadingAction}
-                      onClick={() => onRenew(it.client.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRenew(it.client.id);
+                      }}
                       className="bg-green-600 text-white px-3 py-2 rounded-xl text-sm"
                     >
                       Renew
@@ -135,7 +149,10 @@ export default function VehicleRenewalsListPage() {
                     {status === 'missed' && (
                       <button
                         disabled={loadingAction}
-                        onClick={() => onDeleteClient(it.client.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteClient(it.client.id);
+                        }}
                         className="bg-red-600 text-white px-3 py-2 rounded-xl text-sm"
                       >
                         Delete Client
