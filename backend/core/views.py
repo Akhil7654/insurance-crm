@@ -64,6 +64,26 @@ class HealthInsuranceViewSet(viewsets.ModelViewSet):
     queryset = HealthInsurance.objects.all()
     serializer_class = HealthInsuranceSerializer
 
+    def _set_floater_from_ages(self, serializer):
+        ages = serializer.validated_data.get("ages")
+
+        # if ages not being updated, fallback to existing instance value
+        if ages is None and serializer.instance:
+            ages = serializer.instance.ages or ""
+
+        ages_list = [a.strip() for a in str(ages or "").split(",") if a.strip()]
+        count = len(ages_list) if len(ages_list) > 0 else 1
+
+        serializer.validated_data["floater_type"] = "individual" if count == 1 else "family"
+
+    def perform_create(self, serializer):
+        self._set_floater_from_ages(serializer)
+        serializer.save()
+
+    def perform_update(self, serializer):
+        self._set_floater_from_ages(serializer)
+        serializer.save()
+
 
 # ----------------------------- QUOTES -----------------------------
 class QuoteViewSet(viewsets.ModelViewSet):

@@ -66,6 +66,17 @@ export async function getHealthClients() {
   return res.json();
 }
 
+// ---------------- HEALTH (UPDATE) ----------------
+export async function updateHealthInsurance(id: number, data: any) {
+  const res = await fetch(`${API_BASE}/health-insurance/${id}/`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update health insurance');
+  return res.json();
+}
+
 // ---------------- NOTES ----------------
 export async function createNote(data: any) {
   const res = await fetch(`${API_BASE}/notes/`, {
