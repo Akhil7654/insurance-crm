@@ -1,7 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { updateClient, updateHealthInsurance } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import {
+  updateClient,
+  updateHealthInsurance,
+  renewHealthClient,
+  renewVehicleClient,
+  deleteClientFull,
+} from '@/lib/api';
+import ConvertModal from '@/components/ConvertModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const fadeUp = {
@@ -30,18 +38,37 @@ function floaterFromCount(count: number) {
   return count === 1 ? 'individual' : 'family';
 }
 
+// “Already Renewed” rule:
+// - if renewal_date exists AND it is today/future => renewed ✅
+// - else => not renewed ❌
+function isRenewedByDate(renewalDate?: string | null) {
+  if (!renewalDate) return false;
+  const d = new Date(renewalDate);
+  if (Number.isNaN(d.getTime())) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  d.setHours(0, 0, 0, 0);
+  return d.getTime() >= today.getTime();
+}
+
 export default function ClientSummary({ client }: any) {
+  const router = useRouter();
+
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(client);
   const [saving, setSaving] = useState(false);
+
+  const [showConvert, setShowConvert] = useState(false);
+  const [renewing, setRenewing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const agesArr = useMemo(() => {
     const agesStr =
       typeof form.health_details?.ages === 'string' ? form.health_details.ages : '';
     return parseAges(agesStr);
   }, [form.health_details?.ages]);
-
-  const renewalDate = form.health_details?.renewal_date;
 
   const setHealthPatch = (patch: any) => {
     setForm((prev: any) => ({
@@ -54,10 +81,10 @@ export default function ClientSummary({ client }: any) {
   };
 
   const syncFloaterFromAges = (agesStr: string) => {
-    const count = parseAges(agesStr).length;
+    const count = parseAges(agesStr).length || 1;
     setHealthPatch({
       ages: agesStr,
-      floater_type: floaterFromCount(Math.max(1, count || 1)),
+      floater_type: floaterFromCount(count),
     });
   };
 
@@ -84,17 +111,15 @@ export default function ClientSummary({ client }: any) {
     try {
       setSaving(true);
 
-      // 1) save base client fields
+      // 1) base client update
       const updatedClient = await updateClient(client.id, {
         name: form.name,
         mobile: form.mobile,
         place: form.place,
       });
-
-      // keep latest client fields in UI
       setForm((prev: any) => ({ ...prev, ...updatedClient }));
 
-      // 2) save health fields (if health client)
+      // 2) health extra update (ages/ped/floater)
       if (form.insurance_type === 'health' && form.health_details?.id) {
         const agesStr = String(form.health_details?.ages || '');
         const count = parseAges(agesStr).length || 1;
@@ -119,6 +144,63 @@ export default function ClientSummary({ client }: any) {
       setEditing(false);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // ---------------- ACTIONS (Convert / Renew / Delete) ----------------
+
+  const isConverted = !!form.is_converted; // from Client model :contentReference[oaicite:4]{index=4}
+  const renewalDate =
+    form.insurance_type === 'vehicle'
+      ? form.vehicle_details?.renewal_date
+      : form.health_details?.renewal_date;
+
+  const isRenewed = isRenewedByDate(renewalDate);
+
+  const handleRenew = async () => {
+    const next = prompt('Enter Next Renewal Date (YYYY-MM-DD)');
+    if (!next) return;
+
+    try {
+      setRenewing(true);
+
+      if (form.insurance_type === 'vehicle') {
+        await renewVehicleClient(form.id, next); // exists in api.ts :contentReference[oaicite:5]{index=5}
+        setForm((prev: any) => ({
+          ...prev,
+          vehicle_details: { ...(prev.vehicle_details || {}), renewal_date: next },
+        }));
+      } else {
+        await renewHealthClient(form.id, next); // used similarly in health page :contentReference[oaicite:6]{index=6}
+        setForm((prev: any) => ({
+          ...prev,
+          health_details: { ...(prev.health_details || {}), renewal_date: next },
+        }));
+      }
+
+      alert('Renewed ✅');
+      // optional: reload to refresh tables in history page
+      window.location.reload();
+    } catch {
+      alert('Renew failed');
+    } finally {
+      setRenewing(false);
+    }
+  };
+
+  const handleDeleteFull = async () => {
+    const ok = confirm('Delete this client fully? This removes all data.');
+    if (!ok) return;
+
+    try {
+      setDeleting(true);
+      await deleteClientFull(form.id); // exists :contentReference[oaicite:7]{index=7}
+      alert('Deleted ✅');
+      router.push(form.insurance_type === 'vehicle' ? '/vehicle' : '/health');
+    } catch {
+      alert('Delete failed');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -174,12 +256,10 @@ export default function ClientSummary({ client }: any) {
                 />
               </div>
 
-              {/* ✅ Health edit fields */}
+              {/* Health edit fields */}
               {form.insurance_type === 'health' && (
                 <div className="mt-6 space-y-3">
-                  <p className="text-sm font-bold text-gray-200 underline">
-                    Health Fields
-                  </p>
+                  <p className="text-sm font-bold text-gray-200 underline">Health Fields</p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="bg-gray-950/60 border border-gray-800 rounded-2xl p-3">
@@ -192,7 +272,12 @@ export default function ClientSummary({ client }: any) {
                         className="w-full bg-gray-900/60 border border-gray-700 focus:border-gray-400 focus:ring-2 focus:ring-gray-700 outline-none p-3 rounded-2xl font-medium text-white"
                       />
                       <p className="text-xs text-gray-400 mt-2">
-                        Floater Type auto: <b>{floaterFromCount(Math.max(1, parseAges(form.health_details?.ages || '').length || 1)).toUpperCase()}</b>
+                        Floater Type auto:{' '}
+                        <b>
+                          {floaterFromCount(
+                            Math.max(1, parseAges(form.health_details?.ages || '').length || 1)
+                          ).toUpperCase()}
+                        </b>
                       </p>
                     </div>
 
@@ -270,14 +355,21 @@ export default function ClientSummary({ client }: any) {
                       {String(form.insurance_type || '').toUpperCase()}
                     </motion.span>
 
-                    {form.insurance_type === 'health' && (
+                    {isConverted && (
                       <motion.span
                         whileHover={{ scale: 1.06 }}
-                        className="text-xs bg-emerald-900/40 border border-emerald-800 px-3 py-1 rounded-full font-bold text-emerald-200"
+                        className="text-xs bg-lime-50 text-green-950 px-3 py-1 rounded-full font-bold"
                       >
-                        {form.health_details?.floater_type === 'family'
-                          ? 'FAMILY FLOATER'
-                          : 'INDIVIDUAL'}
+                        Converted 🏆
+                      </motion.span>
+                    )}
+
+                    {renewalDate && (
+                      <motion.span
+                        whileHover={{ scale: 1.06 }}
+                        className="text-xs bg-yellow-900/40 border border-yellow-800 px-3 py-1 rounded-full font-bold text-yellow-200"
+                      >
+                        Renewal: {renewalDate}
                       </motion.span>
                     )}
                   </div>
@@ -294,40 +386,7 @@ export default function ClientSummary({ client }: any) {
                 </motion.a>
               </motion.div>
 
-              {/* Vehicle details */}
-              {form.insurance_type === 'vehicle' && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ scale: 1.01 }}
-                  className="mt-5 pt-4 border-t border-gray-800 text-sm bg-gray-950/70 rounded-2xl p-4"
-                >
-                  <p className="font-bold mb-3 text-white underline">Vehicle Information</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <motion.div
-                      whileHover={{ y: -2 }}
-                      className="bg-gray-900/70 border border-gray-800 rounded-2xl p-3"
-                    >
-                      <p className="text-gray-400 text-xs">Vehicle Type</p>
-                      <p className="text-white font-bold">
-                        {form.vehicle_details?.vehicle_type || '-'}
-                      </p>
-                    </motion.div>
-
-                    <motion.div
-                      whileHover={{ y: -2 }}
-                      className="bg-gray-900/70 border border-gray-800 rounded-2xl p-3"
-                    >
-                      <p className="text-gray-400 text-xs">Insurance Cover</p>
-                      <p className="text-white font-bold">
-                        {form.vehicle_details?.insurance_cover || '-'}
-                      </p>
-                    </motion.div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Health details */}
+              {/* Health info block (same as before) */}
               {form.insurance_type === 'health' && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -338,67 +397,129 @@ export default function ClientSummary({ client }: any) {
                   <p className="font-bold mb-3 text-white underline">Health Information</p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <motion.div
-                      whileHover={{ y: -2 }}
-                      className="bg-gray-900/70 border border-gray-800 rounded-2xl p-3"
-                    >
-                      <p className="text-gray-400 text-xs">Renewal Date</p>
-                      <p className="text-white font-bold">{renewalDate ? renewalDate : 'Not set'}</p>
-                    </motion.div>
-
-                    <motion.div
-                      whileHover={{ y: -2 }}
-                      className="bg-gray-900/70 border border-gray-800 rounded-2xl p-3"
-                    >
+                    <div className="bg-gray-900/70 border border-gray-800 rounded-2xl p-3">
                       <p className="text-gray-400 text-xs">Total Members</p>
                       <p className="text-white font-bold">{agesArr.length || 0}</p>
-                    </motion.div>
+                    </div>
+
+                    <div className="bg-gray-900/70 border border-gray-800 rounded-2xl p-3">
+                      <p className="text-gray-400 text-xs">Floater</p>
+                      <p className="text-white font-bold">
+                        {form.health_details?.floater_type === 'family'
+                          ? 'FAMILY FLOATER'
+                          : 'INDIVIDUAL'}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="mt-4">
                     <p className="text-gray-400 text-xs mb-2">Ages</p>
-
                     {agesArr.length === 0 ? (
                       <p className="text-gray-300">No ages added</p>
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {agesArr.map((age: string, idx: number) => (
-                          <motion.span
+                          <span
                             key={`${age}-${idx}`}
-                            whileHover={{ scale: 1.08 }}
-                            whileTap={{ scale: 0.96 }}
                             className="text-sm font-bold bg-blue-900/40 border border-blue-800 text-blue-200 px-3 py-1 rounded-full shadow-sm"
                           >
                             {age} yrs
-                          </motion.span>
+                          </span>
                         ))}
                       </div>
                     )}
                   </div>
 
-                  <motion.div
-                    whileHover={{ y: -2 }}
-                    className="mt-4 bg-gray-900/70 border border-gray-800 rounded-2xl p-3"
-                  >
-                    <p className="text-gray-400 text-xs mb-1">PED (Pre-existing Disease)</p>
+                  <div className="mt-4 bg-gray-900/70 border border-gray-800 rounded-2xl p-3">
+                    <p className="text-gray-400 text-xs mb-1">PED</p>
                     <p className="text-white font-medium whitespace-pre-wrap">
                       {form.health_details?.ped?.trim() ? form.health_details.ped : 'No PED'}
                     </p>
-                  </motion.div>
+                  </div>
                 </motion.div>
               )}
 
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setEditing(true)}
-                className="mt-5 text-white/90 hover:text-white hover:underline text-sm font-bold transition cursor-pointer"
-              >
-                Edit Details
-              </motion.button>
+              {/* Vehicle info block */}
+              {form.insurance_type === 'vehicle' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 1.01 }}
+                  className="mt-5 pt-4 border-t border-gray-800 text-sm bg-gray-950/70 rounded-2xl p-4"
+                >
+                  <p className="font-bold mb-3 text-white underline">Vehicle Information</p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="bg-gray-900/70 border border-gray-800 rounded-2xl p-3">
+                      <p className="text-gray-400 text-xs">Vehicle Type</p>
+                      <p className="text-white font-bold">
+                        {form.vehicle_details?.vehicle_type || '-'}
+                      </p>
+                    </div>
+
+                    <div className="bg-gray-900/70 border border-gray-800 rounded-2xl p-3">
+                      <p className="text-gray-400 text-xs">Insurance Cover</p>
+                      <p className="text-white font-bold">
+                        {form.vehicle_details?.insurance_cover || '-'}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ✅ ACTION BUTTONS (your new requirement) */}
+              <div className="mt-5 flex flex-col sm:flex-row gap-2">
+                {!isConverted && (
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => setShowConvert(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl text-sm"
+                  >
+                    Convert
+                  </motion.button>
+                )}
+
+                {!isRenewed && (
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    disabled={renewing}
+                    onClick={handleRenew}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-4 py-2 rounded-xl text-sm disabled:opacity-60"
+                  >
+                    {renewing ? 'Renewing...' : 'Renew'}
+                  </motion.button>
+                )}
+
+                {/* Delete always visible (all cases) */}
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  disabled={deleting}
+                  onClick={handleDeleteFull}
+                  className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-xl text-sm disabled:opacity-60"
+                >
+                  {deleting ? 'Deleting...' : 'Delete'}
+                </motion.button>
+
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => setEditing(true)}
+                  className="bg-gray-800 hover:bg-gray-700 text-white font-semibold px-4 py-2 rounded-xl text-sm"
+                >
+                  Edit Details
+                </motion.button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Convert Modal */}
+        {showConvert && (
+          <ConvertModal
+            clientId={form.id}
+            onClose={() => setShowConvert(false)}
+            onSuccess={() => window.location.reload()}
+          />
+        )}
       </div>
     </motion.div>
   );
