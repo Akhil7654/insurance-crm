@@ -59,8 +59,9 @@ export default function HealthClientHistoryPage() {
     }
   };
 
-  const handleNoteUpdate = async (noteObj: any, text: string) => {
-    const updated = await updateNote(noteObj.id, { text });
+  // ✅ UPDATED: accepts reminder + sends it to backend
+  const handleNoteUpdate = async (noteObj: any, text: string, reminder: boolean) => {
+    const updated = await updateNote(noteObj.id, { text, reminder });
     setHistory((prev) => prev.map((n) => (n.id === noteObj.id ? updated : n)));
   };
 
@@ -72,7 +73,9 @@ export default function HealthClientHistoryPage() {
   if (!client)
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-300">
-        <p className="text-gray-800 text-lg font-bold font-sans">Just a Moment - Loading Client Details..</p>
+        <p className="text-gray-800 text-lg font-bold font-sans">
+          Just a Moment - Loading Client Details..
+        </p>
       </div>
     );
 
@@ -190,7 +193,11 @@ export default function HealthClientHistoryPage() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <HistoryTimeline notes={history} onNoteUpdate={handleNoteUpdate} onNoteDelete={handleNoteDelete} />
+          <HistoryTimeline
+            notes={history}
+            onNoteUpdate={handleNoteUpdate}
+            onNoteDelete={handleNoteDelete}
+          />
         </motion.div>
       </div>
     </div>

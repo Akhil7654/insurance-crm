@@ -60,11 +60,10 @@ export default function ClientHistoryPage() {
     }
   };
 
-  const handleNoteUpdate = async (noteObj: any, text: string) => {
-    const updated = await updateNote(noteObj.id, { text });
-    setHistory((prev) =>
-      prev.map((n) => (n.id === noteObj.id ? updated : n))
-    );
+  // ✅ UPDATED: accepts reminder + sends it to backend
+  const handleNoteUpdate = async (noteObj: any, text: string, reminder: boolean) => {
+    const updated = await updateNote(noteObj.id, { text, reminder });
+    setHistory((prev) => prev.map((n) => (n.id === noteObj.id ? updated : n)));
   };
 
   const handleNoteDelete = async (noteObj: any) => {
@@ -75,14 +74,15 @@ export default function ClientHistoryPage() {
   if (!client)
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-300">
-        <p className="text-gray-800 text-lg font-bold font-sans">Just a Moment - Loading Client Details..</p>
+        <p className="text-gray-800 text-lg font-bold font-sans">
+          Just a Moment - Loading Client Details..
+        </p>
       </div>
     );
 
   return (
     <div className="min-h-screen bg-white p-6">
       <div className="max-w-3xl mx-auto space-y-8">
-
         {/* Client Summary */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <ClientSummary client={client} />
@@ -98,7 +98,7 @@ export default function ClientHistoryPage() {
           <DocumentsSection clientId={client.id} />
         </motion.div>
 
-        {/* ✅ CONVERSION TABLE — ADDED BACK */}
+        {/* Conversion Table */}
         {conversions.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -111,7 +111,6 @@ export default function ClientHistoryPage() {
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-gray-200 border border-gray-800 rounded-lg overflow-hidden">
-
                 <thead className="bg-gray-800">
                   <tr>
                     <th className="p-3 border border-gray-700">POSP</th>
@@ -125,10 +124,7 @@ export default function ClientHistoryPage() {
 
                 <tbody>
                   {conversions.map((c: any) => (
-                    <tr
-                      key={c.id}
-                      className="text-center hover:bg-gray-800 transition"
-                    >
+                    <tr key={c.id} className="text-center hover:bg-gray-800 transition">
                       <td className="p-3 border border-gray-800">{c.posp_code}</td>
                       <td className="p-3 border border-gray-800">{c.customer_name}</td>
                       <td className="p-3 border border-gray-800">{c.company_name}</td>
@@ -138,7 +134,6 @@ export default function ClientHistoryPage() {
                     </tr>
                   ))}
                 </tbody>
-
               </table>
             </div>
           </motion.div>
@@ -155,7 +150,6 @@ export default function ClientHistoryPage() {
           </h2>
 
           <form onSubmit={handleAddNote} className="space-y-4">
-
             <textarea
               required
               value={note.text}
@@ -165,19 +159,14 @@ export default function ClientHistoryPage() {
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
               <div className="space-y-1">
-                <label className="text-sm text-gray-400">
-                  Follow-up Date
-                </label>
+                <label className="text-sm text-gray-400">Follow-up Date</label>
 
                 <input
                   type="date"
                   required
                   value={note.follow_up_date}
-                  onChange={(e) =>
-                    setNote({ ...note, follow_up_date: e.target.value })
-                  }
+                  onChange={(e) => setNote({ ...note, follow_up_date: e.target.value })}
                   className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
 
@@ -192,22 +181,15 @@ export default function ClientHistoryPage() {
                 <input
                   type="checkbox"
                   checked={note.reminder}
-                  onChange={(e) =>
-                    setNote({ ...note, reminder: e.target.checked })
-                  }
+                  onChange={(e) => setNote({ ...note, reminder: e.target.checked })}
                   className="w-5 h-5 accent-blue-600"
                 />
 
                 <div>
-                  <p className="text-gray-100 font-medium">
-                    Enable Reminder
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    Get notified on follow-up date
-                  </p>
+                  <p className="text-gray-100 font-medium">Enable Reminder</p>
+                  <p className="text-xs text-gray-400">Get notified on follow-up date</p>
                 </div>
               </div>
-
             </div>
 
             <button
@@ -217,7 +199,6 @@ export default function ClientHistoryPage() {
             >
               {loading ? 'Saving...' : '+ Add Note'}
             </button>
-
           </form>
         </motion.div>
 
@@ -229,7 +210,6 @@ export default function ClientHistoryPage() {
             onNoteDelete={handleNoteDelete}
           />
         </motion.div>
-
       </div>
     </div>
   );
