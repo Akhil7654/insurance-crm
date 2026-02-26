@@ -79,7 +79,7 @@ export default function VehiclePage() {
 
         <div className="space-y-4">
           <input name="name" placeholder="Client Name" value={form.name} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
-          <input name="mobile" placeholder="Mobile Number" value={form.mobile} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
+          <input name="mobile" placeholder="Phone Number" value={form.mobile} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
           <input name="place" placeholder="Place" value={form.place} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
           <input name="vehicle_type" placeholder="Vehicle Type (Car / Bike)" value={form.vehicle_type} onChange={handleChange} className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
 
