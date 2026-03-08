@@ -32,6 +32,14 @@ export async function deleteClient(id: number) {
   await fetch(`${API_BASE}/clients/${id}/`, { method: 'DELETE' });
 }
 
+export async function deleteClientFull(clientId: number) {
+  const res = await fetch(`${API_BASE}/clients/${clientId}/full-delete/`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Full delete failed');
+  return res.json();
+}
+
 // ---------------- VEHICLE ----------------
 export async function createVehicleInsurance(data: any) {
   const res = await fetch(`${API_BASE}/vehicle-insurance/`, {
@@ -49,7 +57,18 @@ export async function getVehicleClients() {
   return res.json();
 }
 
-// ---------------- ✅ HEALTH (NEW) ----------------
+// ✅ ADDED FOR VEHICLE EMI / VEHICLE DETAIL PATCH
+export async function updateVehicleInsurance(id: number, data: any) {
+  const res = await fetch(`${API_BASE}/vehicle-insurance/${id}/`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update vehicle insurance');
+  return res.json();
+}
+
+// ---------------- HEALTH ----------------
 export async function createHealthInsurance(data: any) {
   const res = await fetch(`${API_BASE}/health-insurance/`, {
     method: 'POST',
@@ -66,7 +85,6 @@ export async function getHealthClients() {
   return res.json();
 }
 
-// ---------------- HEALTH (UPDATE) ----------------
 export async function updateHealthInsurance(id: number, data: any) {
   const res = await fetch(`${API_BASE}/health-insurance/${id}/`, {
     method: 'PATCH',
@@ -159,72 +177,58 @@ export async function deleteDocument(id: number) {
   });
 }
 
-
-
-
 // ---------------- HEALTH RENEWALS ----------------
-
 export async function getHealthRenewalSummary(month: string) {
   const res = await fetch(`${API_BASE}/renewals/health/summary/?month=${month}`);
-  if (!res.ok) throw new Error("Failed to load renewal summary");
+  if (!res.ok) throw new Error('Failed to load renewal summary');
   return res.json();
 }
 
-export async function getHealthRenewals(month: string, status: "pending" | "missed" ) {
+export async function getHealthRenewals(month: string, status: 'pending' | 'missed') {
   const res = await fetch(`${API_BASE}/renewals/health/?month=${month}&status=${status}`);
-  if (!res.ok) throw new Error("Failed to load renewals list");
+  if (!res.ok) throw new Error('Failed to load renewals list');
   return res.json();
 }
 
 export async function renewHealthClient(clientId: number, nextRenewalDate: string) {
   const res = await fetch(`${API_BASE}/renewals/health/${clientId}/renew/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ next_renewal_date: nextRenewalDate }),
   });
-  if (!res.ok) throw new Error("Failed to renew");
+  if (!res.ok) throw new Error('Failed to renew');
   return res.json();
 }
-
-export async function deleteClientFull(clientId: number) {
-  const res = await fetch(`${API_BASE}/clients/${clientId}/full-delete/`, {
-    method: 'DELETE',
-  });
-  if (!res.ok) throw new Error('Full delete failed');
-  return res.json();
-}
-
 
 // ---------------- VEHICLE RENEWALS ----------------
-
 export async function getVehicleRenewalSummary(month: string) {
   const res = await fetch(`${API_BASE}/renewals/vehicle/summary/?month=${month}`);
-  if (!res.ok) throw new Error("Failed to load vehicle renewal summary");
+  if (!res.ok) throw new Error('Failed to load vehicle renewal summary');
   return res.json();
 }
 
-export async function getVehicleRenewals(month: string, status: "pending" | "missed") {
+export async function getVehicleRenewals(month: string, status: 'pending' | 'missed') {
   const res = await fetch(`${API_BASE}/renewals/vehicle/?month=${month}&status=${status}`);
-  if (!res.ok) throw new Error("Failed to load vehicle renewals list");
+  if (!res.ok) throw new Error('Failed to load vehicle renewals list');
   return res.json();
 }
 
 export async function renewVehicleClient(clientId: number, nextRenewalDate: string) {
   const res = await fetch(`${API_BASE}/renewals/vehicle/${clientId}/renew/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ next_renewal_date: nextRenewalDate }),
   });
-  if (!res.ok) throw new Error("Failed to renew vehicle client");
+  if (!res.ok) throw new Error('Failed to renew vehicle client');
   return res.json();
 }
 
 export async function setVehicleRenewalDate(clientId: number, renewalDate: string) {
   const res = await fetch(`${API_BASE}/renewals/vehicle/${clientId}/set/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ renewal_date: renewalDate }),
   });
-  if (!res.ok) throw new Error("Failed to set renewal date");
+  if (!res.ok) throw new Error('Failed to set renewal date');
   return res.json();
 }

@@ -50,9 +50,14 @@ class VehicleInsurance(models.Model):
 
     renewal_date = models.DateField(null=True, blank=True)
 
+    # ✅ EMI fields
+    down_payment = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, default=0)
+    policy_tenure = models.CharField(max_length=100, blank=True, default='')
+    emi_tenure = models.CharField(max_length=100, blank=True, default='')
+    monthly_emi_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, default=0)
+
     def __str__(self):
         return f"{self.client.name} - Vehicle"
-
 
 
 class HealthInsurance(models.Model):
@@ -68,17 +73,20 @@ class HealthInsurance(models.Model):
     )
 
     floater_type = models.CharField(max_length=20, choices=FLOATER_CHOICES)
-
     ages = models.CharField(max_length=100, help_text="Comma separated ages")
-
     ped = models.TextField(blank=True, help_text="Pre-existing disease details")
 
     renewal_date = models.DateField(null=True, blank=True)
     renewal_dismissed = models.BooleanField(default=False)
 
+    # ✅ EMI fields
+    down_payment = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, default=0)
+    policy_tenure = models.CharField(max_length=100, blank=True, default='')
+    emi_tenure = models.CharField(max_length=100, blank=True, default='')
+    monthly_emi_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, default=0)
+
     def __str__(self):
         return f"{self.client.name} - Health ({self.floater_type})"
-
 
 
 class Quote(models.Model):

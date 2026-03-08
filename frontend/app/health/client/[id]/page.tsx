@@ -9,6 +9,7 @@ import {
   createNote,
   updateNote,
   deleteNote,
+  updateHealthInsurance,
 } from '@/lib/api';
 
 import ClientSummary from '@/components/ClientSummary';
@@ -24,6 +25,14 @@ export default function HealthClientHistoryPage() {
   const [conversions, setConversions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const [emiLoading, setEmiLoading] = useState(false);
+  const [emi, setEmi] = useState({
+    down_payment: '',
+    policy_tenure: '',
+    emi_tenure: '',
+    monthly_emi_amount: '',
+  });
+
   const [note, setNote] = useState({
     text: '',
     follow_up_date: '',
@@ -36,6 +45,12 @@ export default function HealthClientHistoryPage() {
     getClientDetail(clientId).then((data) => {
       setClient(data);
       setConversions(data.conversions || []);
+      setEmi({
+        down_payment: data.health_details?.down_payment?.toString?.() || '',
+        policy_tenure: data.health_details?.policy_tenure || '',
+        emi_tenure: data.health_details?.emi_tenure || '',
+        monthly_emi_amount: data.health_details?.monthly_emi_amount?.toString?.() || '',
+      });
     });
 
     getClientHistory(clientId).then(setHistory);
@@ -59,7 +74,6 @@ export default function HealthClientHistoryPage() {
     }
   };
 
-  // ✅ UPDATED: accepts reminder + sends it to backend
   const handleNoteUpdate = async (noteObj: any, text: string, reminder: boolean) => {
     const updated = await updateNote(noteObj.id, { text, reminder });
     setHistory((prev) => prev.map((n) => (n.id === noteObj.id ? updated : n)));
@@ -68,6 +82,35 @@ export default function HealthClientHistoryPage() {
   const handleNoteDelete = async (noteObj: any) => {
     await deleteNote(noteObj.id);
     setHistory((prev) => prev.filter((n) => n.id !== noteObj.id));
+  };
+
+  const handleSaveEmi = async () => {
+    if (!client?.health_details?.id) return;
+
+    try {
+      setEmiLoading(true);
+
+      const updatedHealth = await updateHealthInsurance(client.health_details.id, {
+        down_payment: emi.down_payment === '' ? 0 : emi.down_payment,
+        policy_tenure: emi.policy_tenure,
+        emi_tenure: emi.emi_tenure,
+        monthly_emi_amount: emi.monthly_emi_amount === '' ? 0 : emi.monthly_emi_amount,
+      });
+
+      setClient((prev: any) => ({
+        ...prev,
+        health_details: {
+          ...(prev.health_details || {}),
+          ...updatedHealth,
+        },
+      }));
+
+      alert('EMI details saved ✅');
+    } catch {
+      alert('Failed to save EMI details');
+    } finally {
+      setEmiLoading(false);
+    }
   };
 
   if (!client)
@@ -88,6 +131,57 @@ export default function HealthClientHistoryPage() {
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <QuotesSection clientId={client.id} quotes={client.quotes} />
+        </motion.div>
+
+        {/* ✅ EMI Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-800"
+        >
+          <h2 className="text-xl font-semibold mb-4 text-gray-100">EMI Details</h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <input
+              type="number"
+              value={emi.down_payment}
+              onChange={(e) => setEmi({ ...emi, down_payment: e.target.value })}
+              placeholder="Down Payment"
+              className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+
+            <input
+              type="text"
+              value={emi.policy_tenure}
+              onChange={(e) => setEmi({ ...emi, policy_tenure: e.target.value })}
+              placeholder="Policy Tenure"
+              className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+
+            <input
+              type="text"
+              value={emi.emi_tenure}
+              onChange={(e) => setEmi({ ...emi, emi_tenure: e.target.value })}
+              placeholder="EMI Tenure"
+              className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+
+            <input
+              type="number"
+              value={emi.monthly_emi_amount}
+              onChange={(e) => setEmi({ ...emi, monthly_emi_amount: e.target.value })}
+              placeholder="Monthly EMI Amount"
+              className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+
+          <button
+            onClick={handleSaveEmi}
+            disabled={emiLoading}
+            className="mt-4 w-full bg-green-600 hover:bg-green-700 transition text-white py-3 rounded-lg font-medium"
+          >
+            {emiLoading ? 'Saving...' : 'Save EMI Details'}
+          </button>
         </motion.div>
 
         {conversions.length > 0 && (
