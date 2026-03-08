@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   getHealthClients,
   deleteClient,
@@ -57,6 +57,7 @@ function SummarySkeleton() {
 export default function HealthClientsPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
   const router = useRouter();
 
   const [month, setMonth] = useState<string>(() => toYYYYMM(new Date()));
@@ -103,6 +104,15 @@ export default function HealthClientsPage() {
     loadSummary();
     // eslint-disable-next-line
   }, [month]);
+
+  const filteredClients = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return clients;
+
+    return clients.filter((client: any) =>
+      String(client.name || '').toLowerCase().includes(q)
+    );
+  }, [clients, search]);
 
   const handleDelete = async (e: React.MouseEvent, clientId: number) => {
     e.stopPropagation();
@@ -161,6 +171,23 @@ export default function HealthClientsPage() {
           </motion.button>
         </motion.div>
 
+        {/* ✅ Search Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <div className="bg-white border border-gray-300 rounded-2xl shadow-sm px-4 py-3">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search client by name..."
+              className="w-full bg-transparent outline-none text-gray-900 placeholder:text-gray-500"
+            />
+          </div>
+        </motion.div>
+
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-6">
           <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
             <div>
@@ -211,13 +238,13 @@ export default function HealthClientsPage() {
                 </button>
               </div>
             </div>
-          ) : clients.length === 0 ? (
+          ) : filteredClients.length === 0 ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center text-gray-500 py-10">
-              No health clients found.
+              {search.trim() ? 'No matching health clients found.' : 'No health clients found.'}
             </motion.div>
           ) : (
             <AnimatePresence>
-              {clients.map((client: any, i) => {
+              {filteredClients.map((client: any, i) => {
                 const renewalDate = client.health_details?.renewal_date;
                 const needsRenewalDate = !renewalDate;
 
