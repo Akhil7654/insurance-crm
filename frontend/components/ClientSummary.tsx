@@ -54,9 +54,6 @@ function isRenewedByDate(renewalDate?: string | null) {
   return d.getTime() >= today.getTime();
 }
 
-const VEHICLE_TYPES = ['Two Wheeler', 'Four Wheeler', 'Commercial', 'Other'];
-const INSURANCE_COVERS = ['Comprehensive', 'Third Party', 'Own Damage'];
-
 export default function ClientSummary({ client }: any) {
   const router = useRouter();
 
@@ -345,18 +342,13 @@ export default function ClientSummary({ client }: any) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="bg-gray-950/60 border border-gray-800 rounded-2xl p-3">
                       <p className="text-gray-400 text-xs mb-2">Vehicle Type</p>
-                      <select
+                      <input
+                        type="text"
                         value={form.vehicle_details?.vehicle_type || ''}
                         onChange={(e) => setVehiclePatch({ vehicle_type: e.target.value })}
+                        placeholder="Eg: Two Wheeler"
                         className="w-full bg-gray-900/60 border border-gray-700 focus:border-gray-400 focus:ring-2 focus:ring-gray-700 outline-none p-3 rounded-2xl font-medium text-white"
-                      >
-                        <option value="">Select Vehicle Type</option>
-                        {VEHICLE_TYPES.map((type) => (
-                          <option key={type} value={type}>
-                            {type}
-                          </option>
-                        ))}
-                      </select>
+                      />
                     </div>
 
                     <div className="bg-gray-950/60 border border-gray-800 rounded-2xl p-3">
@@ -366,12 +358,9 @@ export default function ClientSummary({ client }: any) {
                         onChange={(e) => setVehiclePatch({ insurance_cover: e.target.value })}
                         className="w-full bg-gray-900/60 border border-gray-700 focus:border-gray-400 focus:ring-2 focus:ring-gray-700 outline-none p-3 rounded-2xl font-medium text-white"
                       >
-                        <option value="">Select Insurance Cover</option>
-                        {INSURANCE_COVERS.map((cover) => (
-                          <option key={cover} value={cover}>
-                            {cover}
-                          </option>
-                        ))}
+                        <option value="">Select Cover</option>
+                        <option value="full">Full</option>
+                        <option value="third_party">Third Party</option>
                       </select>
                     </div>
                   </div>
