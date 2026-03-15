@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   updateClient,
   updateHealthInsurance,
+  updateVehicleInsurance,
   renewHealthClient,
   renewVehicleClient,
   deleteClientFull,
@@ -38,7 +39,7 @@ function floaterFromCount(count: number) {
   return count === 1 ? 'individual' : 'family';
 }
 
-// “Already Renewed” rule:
+// "Already Renewed" rule:
 // - if renewal_date exists AND it is today/future => renewed ✅
 // - else => not renewed ❌
 function isRenewedByDate(renewalDate?: string | null) {
@@ -52,6 +53,9 @@ function isRenewedByDate(renewalDate?: string | null) {
   d.setHours(0, 0, 0, 0);
   return d.getTime() >= today.getTime();
 }
+
+const VEHICLE_TYPES = ['Two Wheeler', 'Four Wheeler', 'Commercial', 'Other'];
+const INSURANCE_COVERS = ['Comprehensive', 'Third Party', 'Own Damage'];
 
 export default function ClientSummary({ client }: any) {
   const router = useRouter();
@@ -75,6 +79,16 @@ export default function ClientSummary({ client }: any) {
       ...prev,
       health_details: {
         ...(prev.health_details || {}),
+        ...patch,
+      },
+    }));
+  };
+
+  const setVehiclePatch = (patch: any) => {
+    setForm((prev: any) => ({
+      ...prev,
+      vehicle_details: {
+        ...(prev.vehicle_details || {}),
         ...patch,
       },
     }));
@@ -141,6 +155,24 @@ export default function ClientSummary({ client }: any) {
         }));
       }
 
+      // 3) vehicle extra update (vehicle_type / insurance_cover)
+      if (form.insurance_type === 'vehicle' && form.vehicle_details?.id) {
+        const payload = {
+          vehicle_type: form.vehicle_details?.vehicle_type || '',
+          insurance_cover: form.vehicle_details?.insurance_cover || '',
+        };
+
+        const updatedVehicle = await updateVehicleInsurance(form.vehicle_details.id, payload);
+
+        setForm((prev: any) => ({
+          ...prev,
+          vehicle_details: {
+            ...(prev.vehicle_details || {}),
+            ...updatedVehicle,
+          },
+        }));
+      }
+
       setEditing(false);
     } finally {
       setSaving(false);
@@ -149,7 +181,7 @@ export default function ClientSummary({ client }: any) {
 
   // ---------------- ACTIONS (Convert / Renew / Delete) ----------------
 
-  const isConverted = !!form.is_converted; // from Client model :contentReference[oaicite:4]{index=4}
+  const isConverted = !!form.is_converted;
   const renewalDate =
     form.insurance_type === 'vehicle'
       ? form.vehicle_details?.renewal_date
@@ -165,13 +197,13 @@ export default function ClientSummary({ client }: any) {
       setRenewing(true);
 
       if (form.insurance_type === 'vehicle') {
-        await renewVehicleClient(form.id, next); // exists in api.ts :contentReference[oaicite:5]{index=5}
+        await renewVehicleClient(form.id, next);
         setForm((prev: any) => ({
           ...prev,
           vehicle_details: { ...(prev.vehicle_details || {}), renewal_date: next },
         }));
       } else {
-        await renewHealthClient(form.id, next); // used similarly in health page :contentReference[oaicite:6]{index=6}
+        await renewHealthClient(form.id, next);
         setForm((prev: any) => ({
           ...prev,
           health_details: { ...(prev.health_details || {}), renewal_date: next },
@@ -179,7 +211,6 @@ export default function ClientSummary({ client }: any) {
       }
 
       alert('Renewed ✅');
-      // optional: reload to refresh tables in history page
       window.location.reload();
     } catch {
       alert('Renew failed');
@@ -194,7 +225,7 @@ export default function ClientSummary({ client }: any) {
 
     try {
       setDeleting(true);
-      await deleteClientFull(form.id); // exists :contentReference[oaicite:7]{index=7}
+      await deleteClientFull(form.id);
       alert('Deleted ✅');
       router.push(form.insurance_type === 'vehicle' ? '/vehicle' : '/health');
     } catch {
@@ -306,6 +337,47 @@ export default function ClientSummary({ client }: any) {
                 </div>
               )}
 
+              {/* ✅ Vehicle edit fields — same UI pattern as health */}
+              {form.insurance_type === 'vehicle' && (
+                <div className="mt-6 space-y-3">
+                  <p className="text-sm font-bold text-gray-200 underline">Vehicle Fields</p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="bg-gray-950/60 border border-gray-800 rounded-2xl p-3">
+                      <p className="text-gray-400 text-xs mb-2">Vehicle Type</p>
+                      <select
+                        value={form.vehicle_details?.vehicle_type || ''}
+                        onChange={(e) => setVehiclePatch({ vehicle_type: e.target.value })}
+                        className="w-full bg-gray-900/60 border border-gray-700 focus:border-gray-400 focus:ring-2 focus:ring-gray-700 outline-none p-3 rounded-2xl font-medium text-white"
+                      >
+                        <option value="">Select Vehicle Type</option>
+                        {VEHICLE_TYPES.map((type) => (
+                          <option key={type} value={type}>
+                            {type}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="bg-gray-950/60 border border-gray-800 rounded-2xl p-3">
+                      <p className="text-gray-400 text-xs mb-2">Insurance Cover</p>
+                      <select
+                        value={form.vehicle_details?.insurance_cover || ''}
+                        onChange={(e) => setVehiclePatch({ insurance_cover: e.target.value })}
+                        className="w-full bg-gray-900/60 border border-gray-700 focus:border-gray-400 focus:ring-2 focus:ring-gray-700 outline-none p-3 rounded-2xl font-medium text-white"
+                      >
+                        <option value="">Select Insurance Cover</option>
+                        {INSURANCE_COVERS.map((cover) => (
+                          <option key={cover} value={cover}>
+                            {cover}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 mt-5">
                 <motion.button
                   whileHover={{ scale: 1.03 }}
@@ -386,7 +458,7 @@ export default function ClientSummary({ client }: any) {
                 </motion.a>
               </motion.div>
 
-              {/* Health info block (same as before) */}
+              {/* Health info block */}
               {form.insurance_type === 'health' && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -467,7 +539,7 @@ export default function ClientSummary({ client }: any) {
                 </motion.div>
               )}
 
-              {/* ✅ ACTION BUTTONS (your new requirement) */}
+              {/* ACTION BUTTONS */}
               <div className="mt-5 flex flex-col sm:flex-row gap-2">
                 {!isConverted && (
                   <motion.button
@@ -490,7 +562,6 @@ export default function ClientSummary({ client }: any) {
                   </motion.button>
                 )}
 
-                {/* Delete always visible (all cases) */}
                 <motion.button
                   whileTap={{ scale: 0.96 }}
                   disabled={deleting}
