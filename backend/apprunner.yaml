@@ -1,0 +1,33 @@
+version: 1.0
+runtime: python3.11
+
+build:
+  commands:
+    - pip3 install -r requirements.txt
+    - python3 manage.py collectstatic --noinput
+
+run:
+  command: >
+    python3 manage.py migrate --noinput &&
+    gunicorn config.wsgi:application --bind 0.0.0.0:8090 --workers 1 --threads 2 --timeout 120
+  port: 8090
+
+health_check:
+  path: /
+  protocol: HTTP
+  interval: 10
+  timeout: 5
+  healthy_threshold: 1
+  unhealthy_threshold: 5
+
+runtime_environment_variables:
+  ALLOWED_HOSTS: wrfqdictyb.ap-south-1.awsapprunner.com
+  CSRF_TRUSTED_ORIGINS: https://wrfqdictyb.ap-south-1.awsapprunner.com
+  DATABASE_URL: postgresql://postgres.gvqfozhbhhsabugeujfm:akhil7654_org@aws-1-ap-south-1.pooler.supabase.com:6543/postgres
+  DEBUG: "False"
+  SECRET_KEY: cdc81e13ffe7ae1ce2d2ac2707f8a95b
+  SUPABASE_S3_ACCESS_KEY: f43b83777b86670c981fe2b8d7bfb047
+  SUPABASE_S3_SECRET_KEY: cd4628d7f541dff5f34f328a1ee935ce755d36acf15fd93ec8313e0ddcce2548
+  SUPABASE_S3_BUCKET: documents
+  SUPABASE_S3_REGION: ap-south-1
+  SUPABASE_S3_ENDPOINT: https://gvqfozhbhhsabugeujfm.storage.supabase.co/storage/v1/s3
