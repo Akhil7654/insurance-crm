@@ -8,7 +8,7 @@ def home(request):
     return HttpResponse("OK")
 
 urlpatterns = [
-    path("", home), 
+    path("health/", home), 
     path("admin/", admin.site.urls),
     path("api/", include("core.urls")),
 ]

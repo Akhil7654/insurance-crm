@@ -436,3 +436,4 @@ def delete_client_full(request, client_id):
     client = get_object_or_404(Client, id=client_id)
     client.delete()  # ✅ CASCADE deletes everything linked
     return Response({"success": True, "message": "Client deleted fully"})
+
