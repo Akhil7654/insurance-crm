@@ -13,3 +13,33 @@ run:
   env:
     - name: PYTHONPATH
       value: /app/backend/packages
+    
+    - name: DATABASE_URL
+      value: "postgresql://postgres.gvqfozhbhhsabugeujfm:akhil7654_org@aws-1-ap-south-1.pooler.supabase.com:6543/postgres"
+
+    - name: SUPABASE_S3_ENDPOINT
+      value: "https://gvqfozhbhhsabugeujfm.storage.supabase.co/storage/v1/s3"
+
+    - name: SUPABASE_S3_ACCESS_KEY
+      value: "f43b83777b86670c981fe2b8d7bfb047"
+
+    - name: SUPABASE_S3_SECRET_KEY
+      value: "cd4628d7f541dff5f34f328a1ee935ce755d36acf15fd93ec8313e0ddcce2548"
+
+    - name: SUPABASE_S3_BUCKET
+      value: "documents"
+
+    - name: SUPABASE_S3_REGION
+      value: "ap-south-1"
+
+    - name: SECRET_KEY
+      value: "cdc81e13ffe7ae1ce2d2ac2707f8a95b"
+
+    - name: DEBUG
+      value: "False"
+
+    - name: CSRF_TRUSTED_ORIGINS
+      value: "https://3n3yavrvmb.ap-south-1.awsapprunner.com"
+
+    - name: ALLOWED_HOSTS
+      value: "3n3yavrvmb.ap-south-1.awsapprunner.com"
