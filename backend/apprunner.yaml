@@ -15,8 +15,8 @@ run:
       value: /app/backend/packages
     
     - name: DATABASE_URL
-      value: "postgresql://postgres.gvqfozhbhhsabugeujfm:akhil7654_org@aws-1-ap-south-1.pooler.supabase.com:6543/postgres"
-
+      value: "postgresql://postgres:akhil7654_org@db.gvqfozhbhhsabugeujfm.supabase.co:5432/postgres"
+      
     - name: SUPABASE_S3_ENDPOINT
       value: "https://gvqfozhbhhsabugeujfm.storage.supabase.co/storage/v1/s3"
 

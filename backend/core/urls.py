@@ -15,7 +15,8 @@ from .views import (
     delete_client_full,
     vehicle_renew,vehicle_renewal_list,
     vehicle_renewal_summary,
-    vehicle_set_renewal_date
+    vehicle_set_renewal_date,
+    debug_db
 )
 
 router = DefaultRouter()
@@ -42,4 +43,5 @@ urlpatterns = [
 
 
     path("clients/<int:client_id>/full-delete/", delete_client_full),
+    path("debug-db/", debug_db),
 ]

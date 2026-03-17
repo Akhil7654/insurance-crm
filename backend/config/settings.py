@@ -71,9 +71,13 @@ WSGI_APPLICATION = "config.wsgi.application"
 _db_url = os.environ.get("DATABASE_URL")
 if _db_url:
     DATABASES = {
-        "default": dj_database_url.config(default=_db_url)
-    }
-    DATABASES["default"]["CONN_MAX_AGE"] = 0
+    "default": dj_database_url.config(
+        default=_db_url,
+        conn_max_age=600,
+        ssl_require=True
+    )
+}
+    DATABASES["default"]["CONN_MAX_AGE"] = 600
     DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
     DATABASES["default"].setdefault("OPTIONS", {})
     DATABASES["default"]["OPTIONS"]["connect_timeout"] = 10

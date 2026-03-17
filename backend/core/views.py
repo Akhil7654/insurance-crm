@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_date
+import os
 
 from .models import (
     Client,
@@ -437,3 +438,8 @@ def delete_client_full(request, client_id):
     client.delete()  # ✅ CASCADE deletes everything linked
     return Response({"success": True, "message": "Client deleted fully"})
 
+
+@api_view(['GET'])
+def debug_db(request):
+    print("DB URL:", os.environ.get("DATABASE_URL"))
+    return Response({"message": "check logs"})
