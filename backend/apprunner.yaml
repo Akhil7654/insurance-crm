@@ -5,8 +5,9 @@ build:
     build:
       - pip3 install -r requirements.txt --target /app/backend/packages
       - PYTHONPATH=/app/backend/packages python3 manage.py collectstatic --noinput
+      - chmod +x start.sh
 run:
-  command: /bin/sh -c "PYTHONPATH=/app/backend/packages python3 manage.py migrate && PYTHONPATH=/app/backend/packages python3 -m gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 120"
+  command: ./start.sh
   network:
     port: 8080
   env:
