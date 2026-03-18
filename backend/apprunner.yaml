@@ -42,4 +42,4 @@ run:
       value: "https://32qqacvijv.ap-south-1.awsapprunner.com"
 
     - name: ALLOWED_HOSTS
-      value: "32qqacvijv.ap-south-1.awsapprunner.com"
+      value: "*"
