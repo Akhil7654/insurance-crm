@@ -39,7 +39,7 @@ run:
       value: "False"
 
     - name: CSRF_TRUSTED_ORIGINS
-      value: "https://https://32qqacvijv.ap-south-1.awsapprunner.com"
+      value: "https://32qqacvijv.ap-south-1.awsapprunner.com"
 
     - name: ALLOWED_HOSTS
-      value: "https://32qqacvijv.ap-south-1.awsapprunner.com"
+      value: "32qqacvijv.ap-south-1.awsapprunner.com"
