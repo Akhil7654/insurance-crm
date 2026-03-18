@@ -10,12 +10,6 @@ run:
   command: ./start.sh
   network:
     port: 8080
-  health_check:
-    path: /health/
-    interval: 10
-    timeout: 5
-    healthy_threshold: 1
-    unhealthy_threshold: 5
   env:
     - name: PYTHONPATH
       value: /app/backend/packages
@@ -45,7 +39,7 @@ run:
       value: "False"
 
     - name: CSRF_TRUSTED_ORIGINS
-      value: "https://3n3yavrvmb.ap-south-1.awsapprunner.com"
+      value: "https://https://32qqacvijv.ap-south-1.awsapprunner.com"
 
     - name: ALLOWED_HOSTS
-      value: "3n3yavrvmb.ap-south-1.awsapprunner.com"
+      value: "https://32qqacvijv.ap-south-1.awsapprunner.com"
