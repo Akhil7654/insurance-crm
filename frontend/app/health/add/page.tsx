@@ -41,25 +41,23 @@ export default function AddHealthClientPage() {
   };
 
   const handleSubmit = async () => {
-    if (loading || clientId) return; // ✅ prevent double create
+    if (loading || clientId) return;
 
     const agesArray = parseAges(form.agesText);
 
-    // ✅ Validate BEFORE API call (IMPORTANT FIX)
     if (form.floater_type === 'individual' && agesArray.length !== 1) {
-      alert('For Individual, enter exactly 1 age (example: 28)');
+      alert('For Individual, enter exactly 1 age');
       return;
     }
 
     if (form.floater_type === 'family' && agesArray.length < 2) {
-      alert('For Family, enter 2 or more ages (example: 30,28,5)');
+      alert('For Family, enter 2 or more ages');
       return;
     }
 
     try {
       setLoading(true);
 
-      // ✅ Create Client
       const client = await createClient({
         name: form.name,
         mobile: form.mobile,
@@ -67,19 +65,15 @@ export default function AddHealthClientPage() {
         insurance_type: 'health',
       });
 
-      const ages = agesArray.join(',');
-
-      // ✅ Create Health Insurance
       await createHealthInsurance({
         client: client.id,
         floater_type: form.floater_type,
-        ages,
+        ages: agesArray.join(','),
         ped: form.ped,
         renewal_date: form.renewal_date || null,
       });
 
       setClientId(client.id);
-
       alert('Client created ✅ Now add follow-up note');
 
     } catch (err) {
@@ -103,9 +97,7 @@ export default function AddHealthClientPage() {
         reminder: note.reminder,
       });
 
-      alert('Note added successfully ✅');
-
-      // ✅ Redirect AFTER note (your requirement)
+      alert('Note added ✅');
       router.push('/health');
 
     } catch {
@@ -124,69 +116,44 @@ export default function AddHealthClientPage() {
 
         <div className="space-y-4">
 
-          <input
-            name="name"
-            placeholder="Client Name"
-            value={form.name}
-            onChange={handleChange}
-            className="w-full border p-3 rounded"
-          />
+          <input name="name" placeholder="Client Name"
+            value={form.name} onChange={handleChange}
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
 
-          <input
-            name="mobile"
-            placeholder="Mobile Number"
-            value={form.mobile}
-            onChange={handleChange}
-            className="w-full border p-3 rounded"
-          />
+          <input name="mobile" placeholder="Mobile Number"
+            value={form.mobile} onChange={handleChange}
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
 
-          <input
-            name="place"
-            placeholder="Place"
-            value={form.place}
-            onChange={handleChange}
-            className="w-full border p-3 rounded"
-          />
+          <input name="place" placeholder="Place"
+            value={form.place} onChange={handleChange}
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
 
-          <select
-            name="floater_type"
+          <select name="floater_type"
             value={form.floater_type}
             onChange={handleChange}
-            className="w-full border p-3 rounded"
-          >
-            <option value="individual">Individual</option>
-            <option value="family">Family</option>
+            className="w-full border border-white p-3 rounded text-teal-400 font-semibold">
+
+            <option className="text-black" value="individual">Individual</option>
+            <option className="text-black" value="family">Family</option>
           </select>
 
-          <input
-            name="agesText"
-            placeholder={
-              form.floater_type === 'individual'
-                ? 'Age (example: 28)'
-                : 'Ages (example: 30,28,5)'
-            }
-            value={form.agesText}
-            onChange={handleChange}
-            className="w-full border p-3 rounded"
-          />
+          <input name="agesText"
+            placeholder={form.floater_type === 'individual' ? 'Age (example: 28)' : 'Ages (30,28,5)'}
+            value={form.agesText} onChange={handleChange}
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
 
-          <input
-            type="date"
-            name="renewal_date"
+          <label className="block text-sm font-bold text-white">Renewal Date</label>
+          <input type="date" name="renewal_date"
             value={form.renewal_date}
             onChange={handleChange}
-            className="w-full border p-3 rounded"
-          />
+            className="w-full border border-white p-3 rounded text-yellow-600 font-semibold" />
 
-          <textarea
-            name="ped"
-            placeholder="PED details..."
+          <textarea name="ped"
+            placeholder="PED (Pre-existing Disease)..."
             value={form.ped}
             onChange={handleChange}
-            className="w-full border p-3 rounded"
-          />
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
 
-          {/* ✅ SAVE BUTTON FIX */}
           <button
             onClick={handleSubmit}
             disabled={loading || clientId !== null}
@@ -199,10 +166,9 @@ export default function AddHealthClientPage() {
             {clientId ? 'Client Saved ✅' : loading ? 'Saving...' : 'Save Client'}
           </button>
 
-          {/* ✅ NOTE SECTION */}
           {clientId && (
-            <div className="mt-6 border-t pt-4">
-              <h3 className="text-lg font-semibold mb-2 text-white">
+            <div className="mt-6 border-t border-gray-700 pt-4">
+              <h3 className="text-lg font-semibold text-white mb-2">
                 Add Follow-up Note
               </h3>
 
@@ -210,26 +176,18 @@ export default function AddHealthClientPage() {
                 placeholder="Note details..."
                 value={note.text}
                 onChange={(e) => setNote({ ...note, text: e.target.value })}
-                className="w-full border p-3 rounded mb-3"
+                className="w-full border p-3 rounded mb-3 placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
               />
 
-              <input
-                type="date"
+              <input type="date"
                 value={note.follow_up_date}
-                onChange={(e) =>
-                  setNote({ ...note, follow_up_date: e.target.value })
-                }
-                className="w-full border p-3 rounded mb-3"
-              />
+                onChange={(e) => setNote({ ...note, follow_up_date: e.target.value })}
+                className="w-full border p-3 rounded mb-3 text-yellow-600 font-semibold" />
 
-              {/* ✅ REMINDER FIX (restored) */}
-              <label className="flex items-center gap-2 mb-3 text-white">
-                <input
-                  type="checkbox"
+              <label className="flex items-center gap-2 mb-3 text-teal-400 font-semibold">
+                <input type="checkbox"
                   checked={note.reminder}
-                  onChange={(e) =>
-                    setNote({ ...note, reminder: e.target.checked })
-                  }
+                  onChange={(e) => setNote({ ...note, reminder: e.target.checked })}
                 />
                 Reminder
               </label>
@@ -238,9 +196,7 @@ export default function AddHealthClientPage() {
                 onClick={handleAddNote}
                 disabled={noteLoading}
                 className={`w-full py-2 rounded ${
-                  noteLoading
-                    ? 'bg-gray-400'
-                    : 'bg-blue-600 text-white'
+                  noteLoading ? 'bg-gray-400' : 'bg-blue-600 text-white'
                 }`}
               >
                 {noteLoading ? 'Saving...' : '+ Add Note & Finish'}

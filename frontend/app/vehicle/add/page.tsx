@@ -31,19 +31,16 @@ export default function VehiclePage() {
   };
 
   const handleSubmit = async () => {
-    // ✅ prevent double click / duplicate
     if (loading || clientId) return;
 
-    // ✅ BASIC VALIDATION (important)
     if (!form.name || !form.mobile || !form.vehicle_type) {
-      alert('Please fill all required fields');
+      alert('Fill required fields');
       return;
     }
 
     try {
       setLoading(true);
 
-      // ✅ Create Client
       const client = await createClient({
         name: form.name,
         mobile: form.mobile,
@@ -51,7 +48,6 @@ export default function VehiclePage() {
         insurance_type: 'vehicle',
       });
 
-      // ✅ Create Vehicle Insurance
       await createVehicleInsurance({
         client: client.id,
         vehicle_type: form.vehicle_type,
@@ -60,12 +56,10 @@ export default function VehiclePage() {
       });
 
       setClientId(client.id);
+      alert('Client created ✅ Now add note');
 
-      alert('Vehicle client created ✅ Now add follow-up note');
-
-    } catch (err) {
+    } catch {
       alert('Error saving data');
-      console.log(err);
     } finally {
       setLoading(false);
     }
@@ -84,9 +78,7 @@ export default function VehiclePage() {
         reminder: note.reminder,
       });
 
-      alert('Note added successfully ✅');
-
-      // ✅ redirect after note
+      alert('Note added ✅');
       router.push('/vehicle');
 
     } catch {
@@ -106,57 +98,40 @@ export default function VehiclePage() {
 
         <div className="space-y-4">
 
-          <input
-            name="name"
-            placeholder="Client Name"
-            value={form.name}
-            onChange={handleChange}
-            className="w-full border p-3 rounded"
-          />
+          <input name="name" placeholder="Client Name"
+            value={form.name} onChange={handleChange}
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
 
-          <input
-            name="mobile"
-            placeholder="Phone Number"
-            value={form.mobile}
-            onChange={handleChange}
-            className="w-full border p-3 rounded"
-          />
+          <input name="mobile" placeholder="Phone Number"
+            value={form.mobile} onChange={handleChange}
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
 
-          <input
-            name="place"
-            placeholder="Place"
-            value={form.place}
-            onChange={handleChange}
-            className="w-full border p-3 rounded"
-          />
+          <input name="place" placeholder="Place"
+            value={form.place} onChange={handleChange}
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
 
-          <input
-            name="vehicle_type"
-            placeholder="Vehicle Type (Car / Bike)"
-            value={form.vehicle_type}
-            onChange={handleChange}
-            className="w-full border p-3 rounded"
-          />
+          <input name="vehicle_type" placeholder="Vehicle Type (Car / Bike)"
+            value={form.vehicle_type} onChange={handleChange}
+            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans" />
 
-          <select
-            name="insurance_cover"
+          <select name="insurance_cover"
             value={form.insurance_cover}
             onChange={handleChange}
-            className="w-full border p-3 rounded"
-          >
-            <option value="full">Full Insurance</option>
-            <option value="third_party">Third Party</option>
+            className="w-full border border-white p-3 rounded text-teal-400 font-semibold italic">
+
+            <option className="text-black" value="full">Full Insurance</option>
+            <option className="text-black" value="third_party">Third Party</option>
           </select>
 
-          <input
-            type="date"
-            name="renewal_date"
+          <label className="block text-sm font-bold text-white">
+            Renewal Date
+          </label>
+
+          <input type="date" name="renewal_date"
             value={form.renewal_date}
             onChange={handleChange}
-            className="w-full border p-3 rounded"
-          />
+            className="w-full border border-white p-3 rounded text-yellow-600 font-semibold" />
 
-          {/* ✅ SAVE BUTTON FIX */}
           <button
             onClick={handleSubmit}
             disabled={loading || clientId !== null}
@@ -169,7 +144,6 @@ export default function VehiclePage() {
             {clientId ? 'Client Saved ✅' : loading ? 'Saving...' : 'Save Client'}
           </button>
 
-          {/* ✅ NOTE SECTION */}
           {clientId && (
             <div className="mt-6 border-t pt-4">
 
@@ -181,26 +155,18 @@ export default function VehiclePage() {
                 placeholder="Note details..."
                 value={note.text}
                 onChange={(e) => setNote({ ...note, text: e.target.value })}
-                className="w-full border p-3 rounded mb-3"
+                className="w-full border p-3 rounded mb-3 placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
               />
 
-              <input
-                type="date"
+              <input type="date"
                 value={note.follow_up_date}
-                onChange={(e) =>
-                  setNote({ ...note, follow_up_date: e.target.value })
-                }
-                className="w-full border p-3 rounded mb-3"
-              />
+                onChange={(e) => setNote({ ...note, follow_up_date: e.target.value })}
+                className="w-full border p-3 rounded mb-3 text-yellow-600 font-semibold" />
 
-              {/* ✅ REMINDER FIX */}
-              <label className="flex items-center gap-2 mb-3 text-white">
-                <input
-                  type="checkbox"
+              <label className="flex items-center gap-2 mb-3 text-teal-400 font-semibold">
+                <input type="checkbox"
                   checked={note.reminder}
-                  onChange={(e) =>
-                    setNote({ ...note, reminder: e.target.checked })
-                  }
+                  onChange={(e) => setNote({ ...note, reminder: e.target.checked })}
                 />
                 Reminder
               </label>
@@ -209,9 +175,7 @@ export default function VehiclePage() {
                 onClick={handleAddNote}
                 disabled={noteLoading}
                 className={`w-full py-2 rounded ${
-                  noteLoading
-                    ? 'bg-gray-400'
-                    : 'bg-green-600 text-white'
+                  noteLoading ? 'bg-gray-400' : 'bg-green-600 text-white'
                 }`}
               >
                 {noteLoading ? 'Saving...' : '+ Add Note & Finish'}
