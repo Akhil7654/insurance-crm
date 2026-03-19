@@ -1,19 +1,21 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient, createHealthInsurance, createNote } from '@/lib/api';
 
 export default function AddHealthClientPage() {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const [form, setForm] = useState({
     name: '',
     mobile: '',
     place: '',
     floater_type: 'individual',
-    agesText: '', // "28" OR "30,28,5"
+    agesText: '',
     ped: '',
-    renewal_date: '', // ✅ new field
+    renewal_date: '',
   });
 
   const [clientId, setClientId] = useState<number | null>(null);
@@ -31,7 +33,6 @@ export default function AddHealthClientPage() {
   };
 
   const parseAges = (agesText: string) => {
-    // "24" OR "24,30,5"
     return agesText
       .split(',')
       .map((x) => x.trim())
@@ -41,18 +42,11 @@ export default function AddHealthClientPage() {
   };
 
   const handleSubmit = async () => {
+    if (loading) return; // ✅ FIX 1
+
     try {
       setLoading(true);
 
-      // ✅ 1) Create Client
-      const client = await createClient({
-        name: form.name,
-        mobile: form.mobile,
-        place: form.place,
-        insurance_type: 'health',
-      });
-
-      // ✅ 2) Validate Ages
       const agesArray = parseAges(form.agesText);
 
       if (form.floater_type === 'individual' && agesArray.length !== 1) {
@@ -65,20 +59,28 @@ export default function AddHealthClientPage() {
         return;
       }
 
-      // ✅ 3) SQLite-safe: send ages as string "30,28,5"
+      // ✅ Create Client
+      const client = await createClient({
+        name: form.name,
+        mobile: form.mobile,
+        place: form.place,
+        insurance_type: 'health',
+      });
+
       const ages = agesArray.join(',');
 
-      // ✅ 4) Create HealthInsurance (with renewal_date)
+      // ✅ Create Health Insurance
       await createHealthInsurance({
         client: client.id,
         floater_type: form.floater_type,
         ages,
         ped: form.ped,
-        renewal_date: form.renewal_date || null, // ✅ send renewal date
+        renewal_date: form.renewal_date || null,
       });
 
       setClientId(client.id);
-      alert('Health client created successfully!');
+      alert('Health client created successfully! Now you can add a note.');
+
     } catch (err) {
       alert('Error saving data');
       console.log(err);
@@ -98,8 +100,11 @@ export default function AddHealthClientPage() {
         reminder: note.reminder,
       });
 
-      alert('Note added');
-      setNote({ text: '', follow_up_date: '', reminder: true });
+      alert('Note added successfully ✅');
+
+      // ✅ FIX 3: Redirect AFTER note
+      router.push('/health');
+
     } catch {
       alert('Failed to add note');
     }
@@ -118,7 +123,7 @@ export default function AddHealthClientPage() {
             placeholder="Client Name"
             value={form.name}
             onChange={handleChange}
-            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
+            className="w-full border p-3 rounded"
           />
 
           <input
@@ -126,7 +131,7 @@ export default function AddHealthClientPage() {
             placeholder="Mobile Number"
             value={form.mobile}
             onChange={handleChange}
-            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
+            className="w-full border p-3 rounded"
           />
 
           <input
@@ -134,21 +139,17 @@ export default function AddHealthClientPage() {
             placeholder="Place"
             value={form.place}
             onChange={handleChange}
-            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
+            className="w-full border p-3 rounded"
           />
 
           <select
             name="floater_type"
             value={form.floater_type}
             onChange={handleChange}
-            className="w-full border border-white p-3 rounded text-teal-400 font-semibold"
+            className="w-full border p-3 rounded"
           >
-            <option className="text-black" value="individual">
-              Individual
-            </option>
-            <option className="text-black" value="family">
-              Family
-            </option>
+            <option value="individual">Individual</option>
+            <option value="family">Family</option>
           </select>
 
           <input
@@ -160,40 +161,39 @@ export default function AddHealthClientPage() {
             }
             value={form.agesText}
             onChange={handleChange}
-            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
+            className="w-full border p-3 rounded"
           />
 
-          {/* ✅ New Renewal Date field */}
-          <label htmlFor="renewal_date" className="block text-sm font-bold font-sans text-white mb-1">
-            Renewal Date
-          </label>
           <input
             type="date"
             name="renewal_date"
             value={form.renewal_date}
             onChange={handleChange}
-            className="w-full border border-white p-3 rounded text-yellow-600 font-semibold"
-            placeholder="Renewal Date"
+            className="w-full border p-3 rounded"
           />
 
           <textarea
             name="ped"
-            placeholder="PED (Pre-existing Disease) details..."
+            placeholder="PED details..."
             value={form.ped}
             onChange={handleChange}
-            className="w-full border p-3 rounded min-h-120px placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
+            className="w-full border p-3 rounded"
           />
 
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold"
+            className={`w-full py-3 rounded-xl font-semibold ${
+              loading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-green-600 text-white'
+            }`}
           >
             {loading ? 'Saving...' : 'Save Client'}
           </button>
 
           {clientId && (
-            <div className="mt-6 border-t border-gray-700 pt-4">
+            <div className="mt-6 border-t pt-4">
               <h3 className="text-lg font-semibold mb-2 text-white">
                 Add Follow-up Note
               </h3>
@@ -202,7 +202,7 @@ export default function AddHealthClientPage() {
                 placeholder="Note details..."
                 value={note.text}
                 onChange={(e) => setNote({ ...note, text: e.target.value })}
-                className="w-full border p-3 rounded mb-3 placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
+                className="w-full border p-3 rounded mb-3"
               />
 
               <input
@@ -211,25 +211,14 @@ export default function AddHealthClientPage() {
                 onChange={(e) =>
                   setNote({ ...note, follow_up_date: e.target.value })
                 }
-                className="w-full border p-3 rounded mb-3 text-yellow-600 font-semibold"
+                className="w-full border p-3 rounded mb-3"
               />
-
-              <label className="flex items-center gap-2 mb-3 text-teal-400 font-semibold">
-                <input
-                  type="checkbox"
-                  checked={note.reminder}
-                  onChange={(e) =>
-                    setNote({ ...note, reminder: e.target.checked })
-                  }
-                />
-                Reminder
-              </label>
 
               <button
                 onClick={handleAddNote}
                 className="w-full bg-blue-600 text-white py-2 rounded"
               >
-                + Add Note
+                + Add Note & Finish
               </button>
             </div>
           )}
