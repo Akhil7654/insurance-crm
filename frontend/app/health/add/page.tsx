@@ -6,6 +6,7 @@ import { createClient, createHealthInsurance, createNote } from '@/lib/api';
 
 export default function AddHealthClientPage() {
   const [loading, setLoading] = useState(false);
+  const [noteLoading, setNoteLoading] = useState(false);
   const router = useRouter();
 
   const [form, setForm] = useState({
@@ -26,9 +27,7 @@ export default function AddHealthClientPage() {
     reminder: true,
   });
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
+  const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -37,27 +36,28 @@ export default function AddHealthClientPage() {
       .split(',')
       .map((x) => x.trim())
       .filter(Boolean)
-      .map((x) => Number(x))
+      .map(Number)
       .filter((n) => !Number.isNaN(n) && n > 0);
   };
 
   const handleSubmit = async () => {
-    if (loading) return; // ✅ FIX 1
+    if (loading || clientId) return; // ✅ prevent double create
+
+    const agesArray = parseAges(form.agesText);
+
+    // ✅ Validate BEFORE API call (IMPORTANT FIX)
+    if (form.floater_type === 'individual' && agesArray.length !== 1) {
+      alert('For Individual, enter exactly 1 age (example: 28)');
+      return;
+    }
+
+    if (form.floater_type === 'family' && agesArray.length < 2) {
+      alert('For Family, enter 2 or more ages (example: 30,28,5)');
+      return;
+    }
 
     try {
       setLoading(true);
-
-      const agesArray = parseAges(form.agesText);
-
-      if (form.floater_type === 'individual' && agesArray.length !== 1) {
-        alert('For Individual, enter exactly 1 age (example: 28)');
-        return;
-      }
-
-      if (form.floater_type === 'family' && agesArray.length < 2) {
-        alert('For Family, enter 2 or more ages (example: 30,28,5)');
-        return;
-      }
 
       // ✅ Create Client
       const client = await createClient({
@@ -79,7 +79,8 @@ export default function AddHealthClientPage() {
       });
 
       setClientId(client.id);
-      alert('Health client created successfully! Now you can add a note.');
+
+      alert('Client created ✅ Now add follow-up note');
 
     } catch (err) {
       alert('Error saving data');
@@ -90,9 +91,11 @@ export default function AddHealthClientPage() {
   };
 
   const handleAddNote = async () => {
-    if (!clientId) return;
+    if (!clientId || noteLoading) return;
 
     try {
+      setNoteLoading(true);
+
       await createNote({
         client: clientId,
         text: note.text,
@@ -102,11 +105,13 @@ export default function AddHealthClientPage() {
 
       alert('Note added successfully ✅');
 
-      // ✅ FIX 3: Redirect AFTER note
+      // ✅ Redirect AFTER note (your requirement)
       router.push('/health');
 
     } catch {
       alert('Failed to add note');
+    } finally {
+      setNoteLoading(false);
     }
   };
 
@@ -118,6 +123,7 @@ export default function AddHealthClientPage() {
         </h2>
 
         <div className="space-y-4">
+
           <input
             name="name"
             placeholder="Client Name"
@@ -180,18 +186,20 @@ export default function AddHealthClientPage() {
             className="w-full border p-3 rounded"
           />
 
+          {/* ✅ SAVE BUTTON FIX */}
           <button
             onClick={handleSubmit}
-            disabled={loading}
+            disabled={loading || clientId !== null}
             className={`w-full py-3 rounded-xl font-semibold ${
-              loading
+              loading || clientId
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-green-600 text-white'
             }`}
           >
-            {loading ? 'Saving...' : 'Save Client'}
+            {clientId ? 'Client Saved ✅' : loading ? 'Saving...' : 'Save Client'}
           </button>
 
+          {/* ✅ NOTE SECTION */}
           {clientId && (
             <div className="mt-6 border-t pt-4">
               <h3 className="text-lg font-semibold mb-2 text-white">
@@ -214,14 +222,32 @@ export default function AddHealthClientPage() {
                 className="w-full border p-3 rounded mb-3"
               />
 
+              {/* ✅ REMINDER FIX (restored) */}
+              <label className="flex items-center gap-2 mb-3 text-white">
+                <input
+                  type="checkbox"
+                  checked={note.reminder}
+                  onChange={(e) =>
+                    setNote({ ...note, reminder: e.target.checked })
+                  }
+                />
+                Reminder
+              </label>
+
               <button
                 onClick={handleAddNote}
-                className="w-full bg-blue-600 text-white py-2 rounded"
+                disabled={noteLoading}
+                className={`w-full py-2 rounded ${
+                  noteLoading
+                    ? 'bg-gray-400'
+                    : 'bg-blue-600 text-white'
+                }`}
               >
-                + Add Note & Finish
+                {noteLoading ? 'Saving...' : '+ Add Note & Finish'}
               </button>
             </div>
           )}
+
         </div>
       </div>
     </div>
