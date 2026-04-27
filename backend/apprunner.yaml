@@ -48,7 +48,7 @@ run:
       value: "sk_test_Oq9JT4yM8uZfp04Vj2CMbhAvX25Tqvonli1L6AIwse"
 
     - name: OWNER_EMAIL
-      value: "msdcr88@gmail.com"
+      value: "akhilmoses291@gmail.com"
 
     - name: APPROVAL_SECRET
       value: "time to heal world 007123456"
