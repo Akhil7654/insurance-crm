@@ -11,18 +11,23 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { userId, sessionClaims } = await auth();
+  const { userId, sessionClaims, redirectToSignIn } = await auth();
 
   if (isPublicRoute(req)) {
     return NextResponse.next();
   }
 
   if (!userId) {
-    return auth().redirectToSignIn();
+    return redirectToSignIn();
   }
 
-  const approved = sessionClaims?.metadata?.approved;
-  const role = sessionClaims?.metadata?.role;
+  const metadata = sessionClaims?.metadata as {
+    approved?: boolean;
+    role?: string;
+  } | undefined;
+
+  const approved = metadata?.approved;
+  const role = metadata?.role;
 
   if (!approved && role !== "admin") {
     return NextResponse.redirect(new URL("/pending", req.url));
