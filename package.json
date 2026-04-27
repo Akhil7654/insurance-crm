@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@clerk/nextjs": "^7.2.7"
+    "@clerk/nextjs": "^7.2.7",
+    "resend": "^6.12.2"
   }
 }
