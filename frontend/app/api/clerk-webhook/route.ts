@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
     const clerk = await clerkClient();
 
-    // Owner auto-approved
+    // ✅ Owner auto-approved
     if (email === ownerEmail) {
       await clerk.users.updateUserMetadata(userId, {
         publicMetadata: {
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // Normal user pending
+    // ✅ Normal user → pending
     await clerk.users.updateUserMetadata(userId, {
       publicMetadata: {
         approved: false,
@@ -49,10 +49,15 @@ export async function POST(req: Request) {
       },
     });
 
+    // ✅ Links
     const approveLink = `${appUrl}/api/approve-user?userId=${userId}&secret=${approvalSecret}`;
+    const rejectLink = `${appUrl}/api/reject-user?userId=${userId}&secret=${approvalSecret}`;
 
+    // ✅ Send email
     const { error } = await resend.emails.send({
-      from: process.env.RESEND_FROM || "Insurance CRM <onboarding@resend.dev>",
+      from:
+        process.env.RESEND_FROM ||
+        "Insurance CRM <onboarding@resend.dev>",
       to: [ownerEmail!],
       subject: "New CRM user waiting for approval",
       html: `
@@ -67,14 +72,24 @@ export async function POST(req: Request) {
           <p>
             <a 
               href="${approveLink}" 
-              style="background:#111;color:#fff;padding:12px 18px;text-decoration:none;border-radius:6px;display:inline-block;"
+              style="background:#111;color:#fff;padding:12px 18px;text-decoration:none;border-radius:6px;display:inline-block;margin-right:10px;"
             >
               Approve User
             </a>
+
+            <a 
+              href="${rejectLink}" 
+              style="background:#b91c1c;color:#fff;padding:12px 18px;text-decoration:none;border-radius:6px;display:inline-block;"
+            >
+              Reject User
+            </a>
           </p>
 
-          <p>If the button does not work, copy this link:</p>
+          <p><strong>Approve link:</strong></p>
           <p>${approveLink}</p>
+
+          <p><strong>Reject link:</strong></p>
+          <p>${rejectLink}</p>
         </div>
       `,
     });
