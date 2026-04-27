@@ -43,3 +43,15 @@ run:
 
     - name: ALLOWED_HOSTS
       value: "*"
+
+    - name: CLERK_SECRET_KEY
+      value: "sk_test_Oq9JT4yM8uZfp04Vj2CMbhAvX25Tqvonli1L6AIwse"
+
+    - name: OWNER_EMAIL
+      value: "msdcr88@gmail.com"
+
+    - name: APPROVAL_SECRET
+      value: "time to heal world 007123456"
+
+    - name: NEXT_PUBLIC_APP_URL
+      value: "https://insurance-crm-five.vercel.app"
