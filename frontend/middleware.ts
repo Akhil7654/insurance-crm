@@ -21,13 +21,19 @@ export default clerkMiddleware(async (auth, req) => {
     return redirectToSignIn();
   }
 
-  const metadata = sessionClaims?.metadata as {
-    approved?: boolean;
-    role?: string;
-  } | undefined;
+  const metadata =
+    (sessionClaims?.metadata as {
+      approved?: boolean;
+      role?: string;
+    }) ||
+    (sessionClaims?.publicMetadata as {
+      approved?: boolean;
+      role?: string;
+    }) ||
+    {};
 
-  const approved = metadata?.approved;
-  const role = metadata?.role;
+  const approved = metadata.approved === true;
+  const role = metadata.role;
 
   if (!approved && role !== "admin") {
     return NextResponse.redirect(new URL("/pending", req.url));
