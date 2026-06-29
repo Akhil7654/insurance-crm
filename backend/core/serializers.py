@@ -50,6 +50,11 @@ class QuoteSerializer(serializers.ModelSerializer):
 
 
 class NoteSerializer(serializers.ModelSerializer):
+    client_name = serializers.CharField(
+        source="client.name",
+        read_only=True
+    )
+
     client_insurance_type = serializers.CharField(
         source="client.insurance_type",
         read_only=True
@@ -57,8 +62,18 @@ class NoteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Note
-        fields = "__all__"
-
+        fields = [
+            "id",
+            "client",
+            "client_name",
+            "client_insurance_type",
+            "text",
+            "follow_up_date",
+            "reminder",
+            "priority",
+            "created_at",
+            "completed",
+        ]
 
 class DocumentSerializer(serializers.ModelSerializer):
     class Meta:

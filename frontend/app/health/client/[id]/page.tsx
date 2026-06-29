@@ -38,6 +38,7 @@ export default function HealthClientHistoryPage() {
     text: '',
     follow_up_date: '',
     reminder: true,
+    priority: 'HOT',
   });
 
   useEffect(() => {
@@ -50,7 +51,8 @@ export default function HealthClientHistoryPage() {
         down_payment: data.health_details?.down_payment?.toString?.() || '',
         policy_tenure: data.health_details?.policy_tenure || '',
         emi_tenure: data.health_details?.emi_tenure || '',
-        monthly_emi_amount: data.health_details?.monthly_emi_amount?.toString?.() || '',
+        monthly_emi_amount:
+          data.health_details?.monthly_emi_amount?.toString?.() || '',
       });
     });
 
@@ -74,19 +76,38 @@ export default function HealthClientHistoryPage() {
 
   const handleAddNote = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     try {
       setLoading(true);
-      const newNote = await createNote({ client: clientId, ...note });
+
+      const newNote = await createNote({
+        client: clientId,
+        ...note,
+      });
+
       setHistory((prev) => [newNote, ...prev]);
-      setNote({ text: '', follow_up_date: '', reminder: true });
+
+      setNote({
+        text: '',
+        follow_up_date: '',
+        reminder: true,
+        priority: 'HOT',
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleNoteUpdate = async (noteObj: any, text: string, reminder: boolean) => {
+  const handleNoteUpdate = async (
+    noteObj: any,
+    text: string,
+    reminder: boolean
+  ) => {
     const updated = await updateNote(noteObj.id, { text, reminder });
-    setHistory((prev) => prev.map((n) => (n.id === noteObj.id ? updated : n)));
+
+    setHistory((prev) =>
+      prev.map((n) => (n.id === noteObj.id ? updated : n))
+    );
   };
 
   const handleNoteDelete = async (noteObj: any) => {
@@ -104,7 +125,8 @@ export default function HealthClientHistoryPage() {
         down_payment: emi.down_payment === '' ? null : emi.down_payment,
         policy_tenure: emi.policy_tenure,
         emi_tenure: emi.emi_tenure,
-        monthly_emi_amount: emi.monthly_emi_amount === '' ? null : emi.monthly_emi_amount,
+        monthly_emi_amount:
+          emi.monthly_emi_amount === '' ? null : emi.monthly_emi_amount,
       });
 
       setClient((prev: any) => ({
@@ -169,8 +191,10 @@ export default function HealthClientHistoryPage() {
       down_payment: client?.health_details?.down_payment?.toString?.() || '',
       policy_tenure: client?.health_details?.policy_tenure || '',
       emi_tenure: client?.health_details?.emi_tenure || '',
-      monthly_emi_amount: client?.health_details?.monthly_emi_amount?.toString?.() || '',
+      monthly_emi_amount:
+        client?.health_details?.monthly_emi_amount?.toString?.() || '',
     });
+
     setShowEmiEditor(true);
   };
 
@@ -194,7 +218,7 @@ export default function HealthClientHistoryPage() {
           <QuotesSection clientId={client.id} quotes={client.quotes} />
         </motion.div>
 
-        {/* ✅ EMI SECTION ONLY FOR HEALTH */}
+        {/* EMI SECTION ONLY FOR HEALTH */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -238,7 +262,9 @@ export default function HealthClientHistoryPage() {
                 </div>
 
                 <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                  <p className="text-gray-400 text-xs mb-1">Monthly EMI Amount</p>
+                  <p className="text-gray-400 text-xs mb-1">
+                    Monthly EMI Amount
+                  </p>
                   <p className="text-gray-100 font-medium">
                     {client.health_details?.monthly_emi_amount ?? '-'}
                   </p>
@@ -253,44 +279,60 @@ export default function HealthClientHistoryPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-300 mb-2">Down Payment</label>
+                  <label className="block text-sm text-gray-300 mb-2">
+                    Down Payment
+                  </label>
                   <input
                     type="number"
                     value={emi.down_payment}
-                    onChange={(e) => setEmi({ ...emi, down_payment: e.target.value })}
+                    onChange={(e) =>
+                      setEmi({ ...emi, down_payment: e.target.value })
+                    }
                     placeholder="Enter down payment"
                     className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-300 mb-2">Policy Tenure</label>
+                  <label className="block text-sm text-gray-300 mb-2">
+                    Policy Tenure
+                  </label>
                   <input
                     type="text"
                     value={emi.policy_tenure}
-                    onChange={(e) => setEmi({ ...emi, policy_tenure: e.target.value })}
+                    onChange={(e) =>
+                      setEmi({ ...emi, policy_tenure: e.target.value })
+                    }
                     placeholder="Enter policy tenure"
                     className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-300 mb-2">EMI Tenure</label>
+                  <label className="block text-sm text-gray-300 mb-2">
+                    EMI Tenure
+                  </label>
                   <input
                     type="text"
                     value={emi.emi_tenure}
-                    onChange={(e) => setEmi({ ...emi, emi_tenure: e.target.value })}
+                    onChange={(e) =>
+                      setEmi({ ...emi, emi_tenure: e.target.value })
+                    }
                     placeholder="Enter EMI tenure"
                     className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-300 mb-2">Monthly EMI Amount</label>
+                  <label className="block text-sm text-gray-300 mb-2">
+                    Monthly EMI Amount
+                  </label>
                   <input
                     type="number"
                     value={emi.monthly_emi_amount}
-                    onChange={(e) => setEmi({ ...emi, monthly_emi_amount: e.target.value })}
+                    onChange={(e) =>
+                      setEmi({ ...emi, monthly_emi_amount: e.target.value })
+                    }
                     placeholder="Enter monthly EMI amount"
                     className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
@@ -355,11 +397,21 @@ export default function HealthClientHistoryPage() {
                   {conversions.map((c: any) => (
                     <tr key={c.id} className="text-center hover:bg-gray-800 transition">
                       <td className="p-3 border border-gray-800">{c.posp_code}</td>
-                      <td className="p-3 border border-gray-800">{c.customer_name}</td>
-                      <td className="p-3 border border-gray-800">{c.company_name}</td>
-                      <td className="p-3 border border-gray-800">₹{c.premium_amount}</td>
-                      <td className="p-3 border border-gray-800">{c.policy_number}</td>
-                      <td className="p-3 border border-gray-800">{c.customer_mobile}</td>
+                      <td className="p-3 border border-gray-800">
+                        {c.customer_name}
+                      </td>
+                      <td className="p-3 border border-gray-800">
+                        {c.company_name}
+                      </td>
+                      <td className="p-3 border border-gray-800">
+                        ₹{c.premium_amount}
+                      </td>
+                      <td className="p-3 border border-gray-800">
+                        {c.policy_number}
+                      </td>
+                      <td className="p-3 border border-gray-800">
+                        {c.customer_mobile}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -394,7 +446,9 @@ export default function HealthClientHistoryPage() {
                   type="date"
                   required
                   value={note.follow_up_date}
-                  onChange={(e) => setNote({ ...note, follow_up_date: e.target.value })}
+                  onChange={(e) =>
+                    setNote({ ...note, follow_up_date: e.target.value })
+                  }
                   className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
 
@@ -409,13 +463,59 @@ export default function HealthClientHistoryPage() {
                 <input
                   type="checkbox"
                   checked={note.reminder}
-                  onChange={(e) => setNote({ ...note, reminder: e.target.checked })}
+                  onChange={(e) =>
+                    setNote({ ...note, reminder: e.target.checked })
+                  }
                   className="w-5 h-5 accent-green-600"
                 />
 
                 <div>
                   <p className="text-gray-100 font-medium">Enable Reminder</p>
-                  <p className="text-xs text-gray-400">Get notified on follow-up date</p>
+                  <p className="text-xs text-gray-400">
+                    Get notified on follow-up date
+                  </p>
+                </div>
+              </div>
+
+              <div className="sm:col-span-2 bg-gray-800 border border-gray-700 rounded-lg p-4">
+                <p className="text-gray-100 font-medium mb-3">Lead Priority</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    {
+                      value: 'HOT',
+                      label: '🔥 HOT',
+                      active: 'bg-red-600 text-white border-red-400',
+                    },
+                    {
+                      value: 'WARM',
+                      label: '🌤 WARM',
+                      active: 'bg-yellow-500 text-black border-yellow-300',
+                    },
+                    {
+                      value: 'COOL',
+                      label: '❄ COOL',
+                      active: 'bg-blue-600 text-white border-blue-400',
+                    },
+                  ].map((item) => (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() =>
+                        setNote({
+                          ...note,
+                          priority: item.value,
+                        })
+                      }
+                      className={`rounded-xl border px-4 py-3 font-semibold transition ${
+                        note.priority === item.value
+                          ? item.active
+                          : 'bg-gray-900 text-gray-300 border-gray-700 hover:bg-gray-700'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>

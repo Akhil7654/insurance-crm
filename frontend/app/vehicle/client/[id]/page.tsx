@@ -29,6 +29,7 @@ export default function ClientHistoryPage() {
     text: '',
     follow_up_date: '',
     reminder: true,
+    priority: 'HOT',
   });
 
   useEffect(() => {
@@ -50,20 +51,38 @@ export default function ClientHistoryPage() {
 
   const handleAddNote = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     try {
       setLoading(true);
-      const newNote = await createNote({ client: clientId, ...note });
+
+      const newNote = await createNote({
+        client: clientId,
+        ...note,
+      });
+
       setHistory((prev) => [newNote, ...prev]);
-      setNote({ text: '', follow_up_date: '', reminder: true });
+
+      setNote({
+        text: '',
+        follow_up_date: '',
+        reminder: true,
+        priority: 'HOT',
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ UPDATED: accepts reminder + sends it to backend
-  const handleNoteUpdate = async (noteObj: any, text: string, reminder: boolean) => {
+  const handleNoteUpdate = async (
+    noteObj: any,
+    text: string,
+    reminder: boolean
+  ) => {
     const updated = await updateNote(noteObj.id, { text, reminder });
-    setHistory((prev) => prev.map((n) => (n.id === noteObj.id ? updated : n)));
+
+    setHistory((prev) =>
+      prev.map((n) => (n.id === noteObj.id ? updated : n))
+    );
   };
 
   const handleNoteDelete = async (noteObj: any) => {
@@ -83,22 +102,18 @@ export default function ClientHistoryPage() {
   return (
     <div className="min-h-screen bg-white p-6">
       <div className="max-w-3xl mx-auto space-y-8">
-        {/* Client Summary */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <ClientSummary client={client} />
         </motion.div>
 
-        {/* Quotes */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <QuotesSection clientId={client.id} quotes={client.quotes} />
         </motion.div>
 
-        {/* Documents */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <DocumentsSection clientId={client.id} />
         </motion.div>
 
-        {/* Conversion Table */}
         {conversions.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -139,7 +154,6 @@ export default function ClientHistoryPage() {
           </motion.div>
         )}
 
-        {/* Add Note Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -166,7 +180,9 @@ export default function ClientHistoryPage() {
                   type="date"
                   required
                   value={note.follow_up_date}
-                  onChange={(e) => setNote({ ...note, follow_up_date: e.target.value })}
+                  onChange={(e) =>
+                    setNote({ ...note, follow_up_date: e.target.value })
+                  }
                   className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
 
@@ -181,13 +197,58 @@ export default function ClientHistoryPage() {
                 <input
                   type="checkbox"
                   checked={note.reminder}
-                  onChange={(e) => setNote({ ...note, reminder: e.target.checked })}
+                  onChange={(e) =>
+                    setNote({ ...note, reminder: e.target.checked })
+                  }
                   className="w-5 h-5 accent-blue-600"
                 />
 
                 <div>
                   <p className="text-gray-100 font-medium">Enable Reminder</p>
-                  <p className="text-xs text-gray-400">Get notified on follow-up date</p>
+                  <p className="text-xs text-gray-400">
+                    Get notified on follow-up date
+                  </p>
+                </div>
+              </div>
+
+              <div className="sm:col-span-2 bg-gray-800 border border-gray-700 rounded-lg p-4">
+                <p className="text-gray-100 font-medium mb-3">Lead Priority</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    {
+                      value: 'HOT',
+                      label: '🔥 HOT',
+                      active: 'bg-red-600 text-white border-red-400 shadow-red-500/30',
+                    },
+                    {
+                      value: 'WARM',
+                      label: '🌤 WARM',
+                      active:
+                        'bg-yellow-500 text-black border-yellow-300 shadow-yellow-500/30',
+                    },
+                    {
+                      value: 'COOL',
+                      label: '❄ COOL',
+                      active:
+                        'bg-blue-600 text-white border-blue-400 shadow-blue-500/30',
+                    },
+                  ].map((item) => (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() =>
+                        setNote({ ...note, priority: item.value })
+                      }
+                      className={`rounded-xl border px-4 py-3 font-semibold transition shadow-lg ${
+                        note.priority === item.value
+                          ? item.active
+                          : 'bg-gray-900 text-gray-300 border-gray-700 hover:bg-gray-700'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -202,7 +263,6 @@ export default function ClientHistoryPage() {
           </form>
         </motion.div>
 
-        {/* History Timeline */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <HistoryTimeline
             notes={history}
