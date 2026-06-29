@@ -98,17 +98,22 @@ export default function HealthClientHistoryPage() {
     }
   };
 
-  const handleNoteUpdate = async (
-    noteObj: any,
-    text: string,
-    reminder: boolean
-  ) => {
-    const updated = await updateNote(noteObj.id, { text, reminder });
+const handleNoteUpdate = async (
+  noteObj: any,
+  text: string,
+  reminder: boolean,
+  priority: 'HOT' | 'WARM' | 'COOL'
+) => {
+  const updated = await updateNote(noteObj.id, {
+    text,
+    reminder,
+    priority,
+  });
 
-    setHistory((prev) =>
-      prev.map((n) => (n.id === noteObj.id ? updated : n))
-    );
-  };
+  setHistory((prev) =>
+    prev.map((n) => (n.id === noteObj.id ? updated : n))
+  );
+};
 
   const handleNoteDelete = async (noteObj: any) => {
     await deleteNote(noteObj.id);
