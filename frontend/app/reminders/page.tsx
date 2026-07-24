@@ -12,25 +12,6 @@ const API =
   process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 
 /* ------------------------------------------------------- */
-/* TYPES */
-/* ------------------------------------------------------- */
-
-type Priority = 'HOT' | 'WARM' | 'COOL';
-type InsuranceType = 'all' | 'vehicle' | 'health';
-type NoteStatus = 'overdue' | 'today' | 'upcoming';
-
-interface Note {
-  id: number;
-  text: string;
-  follow_up_date: string;
-  client: number | string;
-  client_name?: string;
-  client_insurance_type?: 'vehicle' | 'health';
-  priority?: Priority;
-  status: NoteStatus;
-}
-
-/* ------------------------------------------------------- */
 /* PRIORITY TABS */
 /* ------------------------------------------------------- */
 
@@ -115,17 +96,6 @@ const statusStyle = (status: string) => {
   }
 };
 
-const statusLabel = (status: string) => {
-  switch (status) {
-    case 'overdue':
-      return '⚠️ Overdue';
-    case 'today':
-      return '📅 Today';
-    default:
-      return '⏳ Upcoming';
-  }
-};
-
 const priorityBadgeStyle = (priority: string) => {
   switch (priority) {
     case 'HOT':
@@ -152,31 +122,15 @@ const priorityIcon = (priority: string) => {
   }
 };
 
-// NOTE: defaults to the same insurance type ('vehicle') that routeToClient()
-// falls back to, so the icon shown on a card always matches where clicking
-// it will navigate.
-const insuranceIcon = (type?: string) => {
+const insuranceIcon = (type: string) => {
   switch (type) {
-    case 'health':
-      return '❤️';
     case 'vehicle':
       return '🚗';
+    case 'health':
+      return '❤️';
     default:
-      return '🚗';
+      return '🌐';
   }
-};
-
-const insuranceBadgeStyle = (type?: string) => {
-  return type === 'health'
-    ? 'bg-green-500/20 text-green-300 border-green-500/30'
-    : 'bg-blue-500/20 text-blue-300 border-blue-500/30';
-};
-
-// Guards against malformed follow_up_date values. Invalid dates sort to the
-// end instead of silently producing NaN and scrambling the ordering.
-const safeTime = (dateStr: string) => {
-  const t = new Date(dateStr).getTime();
-  return Number.isNaN(t) ? Infinity : t;
 };
 
 /* ------------------------------------------------------- */
@@ -195,13 +149,13 @@ async function fetchJSON(url: string, options?: RequestInit) {
 }
 
 export default function ReminderDashboard() {
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [notes, setNotes] = useState<any[]>([]);
 
   const [selectedPriority, setSelectedPriority] =
-    useState<Priority>('HOT');
+    useState<'HOT' | 'WARM' | 'COOL'>('HOT');
 
   const [selectedInsurance, setSelectedInsurance] =
-    useState<InsuranceType>('all');
+    useState<'all' | 'vehicle' | 'health'>('all');
 
   const [hideOverdue, setHideOverdue] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -209,7 +163,7 @@ export default function ReminderDashboard() {
 
   const router = useRouter();
 
-  const routeToClient = (n: Note) => {
+  const routeToClient = (n: any) => {
     const type = n.client_insurance_type || 'vehicle';
     router.push(`/${type}/client/${n.client}`);
   };
@@ -225,14 +179,16 @@ export default function ReminderDashboard() {
         fetchJSON(`${API}/notes/upcoming/`),
       ]);
 
-      const combined: Note[] = [
-        ...overdue.map((n: any) => ({ ...n, status: 'overdue' as const })),
-        ...today.map((n: any) => ({ ...n, status: 'today' as const })),
-        ...upcoming.map((n: any) => ({ ...n, status: 'upcoming' as const })),
+      const combined = [
+        ...overdue.map((n: any) => ({ ...n, status: 'overdue' })),
+        ...today.map((n: any) => ({ ...n, status: 'today' })),
+        ...upcoming.map((n: any) => ({ ...n, status: 'upcoming' })),
       ];
 
       combined.sort(
-        (a, b) => safeTime(a.follow_up_date) - safeTime(b.follow_up_date)
+        (a: any, b: any) =>
+          new Date(a.follow_up_date).getTime() -
+          new Date(b.follow_up_date).getTime()
       );
 
       setNotes(combined);
@@ -333,10 +289,9 @@ export default function ReminderDashboard() {
     };
   }, [notes]);
 
-  const renderCard = (n: Note, i: number) => (
+  const renderCard = (n: any, i: number) => (
     <motion.div
       key={n.id}
-      layout
       initial={{ opacity: 0, y: 25 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -15 }}
@@ -360,18 +315,14 @@ export default function ReminderDashboard() {
             📅 Follow-up: {n.follow_up_date}
           </p>
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            {n.client_name && (
-              <span className="bg-gray-800 border border-gray-700 px-2 py-1 rounded-full text-xs text-gray-200">
-                👤 {n.client_name}
-              </span>
-            )}
+          {n.client_name && (
+            <p className="text-xs text-gray-400 mt-1">
+              👤 {n.client_name}
+            </p>
+          )}
 
-            <span
-              className={`px-2 py-1 rounded-full text-xs border ${insuranceBadgeStyle(
-                n.client_insurance_type
-              )}`}
-            >
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="text-xs bg-gray-800 text-gray-200 px-2 py-1 rounded-full border border-gray-700">
               {insuranceIcon(n.client_insurance_type)}{' '}
               {n.client_insurance_type === 'health' ? 'Health' : 'Vehicle'}
             </span>
@@ -392,16 +343,14 @@ export default function ReminderDashboard() {
               n.status
             )}`}
           >
-            {statusLabel(n.status)}
+            {n.status}
           </span>
 
           <button
             onClick={(e) => handleDelete(e, n.id)}
-            title="Delete reminder"
-            aria-label="Delete reminder"
-            className="text-red-400 hover:text-red-300 text-lg leading-none transition"
+            className="bg-red-500/10 hover:bg-red-500/20 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition border border-red-500/20 hover:border-red-500/40"
           >
-            🗑
+            🗑 Delete
           </button>
         </div>
       </div>
@@ -449,7 +398,7 @@ export default function ReminderDashboard() {
                   return (
                     <button
                       key={tab.value}
-                      onClick={() => setSelectedInsurance(tab.value as InsuranceType)}
+                      onClick={() => setSelectedInsurance(tab.value)}
                       className="relative rounded-xl py-3 overflow-hidden transition"
                     >
                       {active && (
@@ -508,7 +457,7 @@ export default function ReminderDashboard() {
               <motion.button
                 key={tab.value}
                 type="button"
-                onClick={() => setSelectedPriority(tab.value as Priority)}
+                onClick={() => setSelectedPriority(tab.value)}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.97 }}
                 className={`relative overflow-hidden rounded-2xl border p-5 text-left shadow-lg transition ${
@@ -565,72 +514,67 @@ export default function ReminderDashboard() {
             </button>
           </div>
         ) : (
-          // NOTE: this outer wrapper is intentionally NOT re-keyed by
-          // `${selectedInsurance}-${selectedPriority}` anymore. Re-keying it
-          // forced an immediate unmount/remount of the whole subtree on every
-          // filter change, which skipped the per-card exit animations below
-          // (the inner AnimatePresence never got a chance to run them).
-          // Individual cards still animate in/out correctly via their own
-          // `key={n.id}` + `layout` prop inside the AnimatePresence blocks.
-          <motion.div layout>
-            {overdueNotes.length > 0 && (
-              <div className="mb-8 border-b border-gray-300 pb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="flex items-center gap-2 text-xl font-bold text-gray-800">
-                    <span className="text-2xl">⚠️</span>
-                    Overdue
-                    <span className="text-blue-600">{selectedPriority}</span>
-                    <span className="px-2 py-1 rounded-full bg-gray-200 text-sm font-semibold">
-                      {selectedInsurance === 'all'
-                        ? '🌐 All'
-                        : selectedInsurance === 'vehicle'
-                        ? '🚗 Vehicle'
-                        : '❤️ Health'}
-                    </span>
-                    <span className="text-gray-500">
-                      ({overdueNotes.length})
-                    </span>
-                  </h2>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${selectedInsurance}-${selectedPriority}`}
+              initial={{ opacity: 0, x: 35 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -35 }}
+              transition={{ duration: 0.25 }}
+            >
+              {overdueNotes.length > 0 && (
+                <div className="mb-8 border-b border-gray-300 pb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="flex items-center gap-2 text-xl font-bold text-gray-800">
+                      <span className="text-2xl">⚠️</span>
+                      Overdue
+                      <span className="text-blue-600">{selectedPriority}</span>
+                      <span className="px-2 py-1 rounded-full bg-gray-200 text-sm font-semibold">
+                        {selectedInsurance === 'all'
+                          ? '🌐 All'
+                          : selectedInsurance === 'vehicle'
+                          ? '🚗 Vehicle'
+                          : '❤️ Health'}
+                      </span>
+                      <span className="text-gray-500">
+                        ({overdueNotes.length})
+                      </span>
+                    </h2>
 
-                  <button
-                    onClick={() => setHideOverdue(!hideOverdue)}
-                    className="text-sm px-3 font-semibold py-1.5 bg-gray-200 hover:bg-red-200 rounded-lg transition cursor-pointer text-black"
-                  >
-                    {hideOverdue ? '👀 Show' : '🙈 Hide'}
-                  </button>
-                </div>
-
-                <AnimatePresence>
-                  {!hideOverdue && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.35 }}
-                      className="space-y-4 overflow-hidden"
+                    <button
+                      onClick={() => setHideOverdue(!hideOverdue)}
+                      className="text-sm px-3 font-semibold py-1.5 bg-gray-200 hover:bg-red-200 rounded-lg transition cursor-pointer text-black"
                     >
-                      <AnimatePresence>
-                        {overdueNotes.map((n, i) => renderCard(n, i))}
-                      </AnimatePresence>
-                    </motion.div>
-                  )}
+                      {hideOverdue ? 'Show' : 'Hide'}
+                    </button>
+                  </div>
+
+                  <AnimatePresence>
+                    {!hideOverdue && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.35 }}
+                        className="space-y-4 overflow-hidden"
+                      >
+                        {overdueNotes.map((n: any, i) => renderCard(n, i))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <AnimatePresence>
+                  {otherNotes.map((n: any, i) => renderCard(n, i))}
                 </AnimatePresence>
               </div>
-            )}
 
-            <div className="space-y-4">
-              <AnimatePresence>
-                {otherNotes.map((n, i) => renderCard(n, i))}
-              </AnimatePresence>
-            </div>
-
-            <AnimatePresence>
               {filteredNotes.length === 0 && (
                 <motion.div
-                  key="empty-state"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.35 }}
                   className="bg-gray-900 rounded-3xl border border-gray-800 py-12 px-8 text-center mt-8"
                 >
@@ -666,8 +610,8 @@ export default function ReminderDashboard() {
                   </p>
                 </motion.div>
               )}
-            </AnimatePresence>
-          </motion.div>
+            </motion.div>
+          </AnimatePresence>
         )}
       </div>
     </div>
