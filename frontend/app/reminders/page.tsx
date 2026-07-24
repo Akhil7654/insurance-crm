@@ -528,14 +528,8 @@ export default function ReminderDashboard() {
                     <h2 className="flex items-center gap-2 text-xl font-bold text-gray-800">
                       <span className="text-2xl">⚠️</span>
                       Overdue
-                      <span className="text-blue-600">{selectedPriority}</span>
-                      <span className="px-2 py-1 rounded-full bg-gray-200 text-sm font-semibold">
-                        {selectedInsurance === 'all'
-                          ? '🌐 All'
-                          : selectedInsurance === 'vehicle'
-                          ? '🚗 Vehicle'
-                          : '❤️ Health'}
-                      </span>
+                      
+                     
                       <span className="text-gray-500">
                         ({overdueNotes.length})
                       </span>
