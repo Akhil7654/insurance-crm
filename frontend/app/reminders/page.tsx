@@ -40,15 +40,10 @@ const priorityTabs = [
 ] as const;
 
 /* ------------------------------------------------------- */
-/* INSURANCE FILTER */
+/* INSURANCE FILTER (All tab removed — Vehicle / Health only) */
 /* ------------------------------------------------------- */
 
 const insuranceTabs = [
-  {
-    value: 'all',
-    title: 'All',
-    icon: '🌐',
-  },
   {
     value: 'vehicle',
     title: 'Vehicle',
@@ -155,7 +150,7 @@ export default function ReminderDashboard() {
     useState<'HOT' | 'WARM' | 'COOL'>('HOT');
 
   const [selectedInsurance, setSelectedInsurance] =
-    useState<'all' | 'vehicle' | 'health'>('all');
+    useState<'health' | 'vehicle'>('health');
 
   const [hideOverdue, setHideOverdue] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -228,8 +223,6 @@ export default function ReminderDashboard() {
   /* ------------------------------------------------------- */
 
   const insuranceFiltered = useMemo(() => {
-    if (selectedInsurance === 'all') return notes;
-
     return notes.filter(
       (n) => n.client_insurance_type === selectedInsurance
     );
@@ -272,13 +265,11 @@ export default function ReminderDashboard() {
   }, [insuranceFiltered]);
 
   /* ------------------------------------------------------- */
-  /* INSURANCE COUNTS */
+  /* INSURANCE COUNTS (Vehicle / Health only) */
   /* ------------------------------------------------------- */
 
   const insuranceCounts = useMemo(() => {
     return {
-      all: notes.length,
-
       vehicle: notes.filter(
         (n) => n.client_insurance_type === 'vehicle'
       ).length,
@@ -330,13 +321,17 @@ export default function ReminderDashboard() {
         </div>
 
         <div className="flex flex-col items-end gap-3">
-          <span
+          <motion.span
+            key={`${n.id}-${n.priority || 'HOT'}`}
+            initial={{ scale: 0.6, opacity: 0, rotate: -8 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
             className={`px-3 py-1 text-xs font-semibold rounded-full border ${priorityBadgeStyle(
               n.priority || 'HOT'
             )}`}
           >
             {priorityIcon(n.priority || 'HOT')} {n.priority || 'HOT'}
-          </span>
+          </motion.span>
 
           <span
             className={`px-3 py-1 text-xs font-semibold rounded-full border ${statusStyle(
@@ -371,16 +366,14 @@ export default function ReminderDashboard() {
           </h1>
 
           <p className="text-gray-500 mt-1">
-            {selectedInsurance === 'all'
-              ? 'Track all insurance reminders by lead priority'
-              : selectedInsurance === 'vehicle'
+            {selectedInsurance === 'vehicle'
               ? 'Viewing Vehicle Insurance reminders'
               : 'Viewing Health Insurance reminders'}
           </p>
         </motion.div>
 
         {/* ========================= */}
-        {/* Insurance Filter */}
+        {/* Insurance Filter (Vehicle / Health) */}
         {/* ========================= */}
 
         <LayoutGroup>
@@ -391,30 +384,60 @@ export default function ReminderDashboard() {
             className="mb-8"
           >
             <div className="bg-white rounded-2xl p-2 shadow border border-gray-200">
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {insuranceTabs.map((tab) => {
                   const active = selectedInsurance === tab.value;
 
                   return (
-                    <button
+                    <motion.button
                       key={tab.value}
                       onClick={() => setSelectedInsurance(tab.value)}
-                      className="relative rounded-xl py-3 overflow-hidden transition"
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="relative rounded-xl py-4 overflow-hidden transition"
                     >
                       {active && (
                         <motion.div
                           layoutId="insurance-pill"
                           transition={{
                             type: 'spring',
-                            stiffness: 350,
-                            damping: 30,
+                            stiffness: 380,
+                            damping: 26,
                           }}
-                          className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl"
+                          className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl"
+                        />
+                      )}
+
+                      {/* subtle glow sweep on the active pill */}
+                      {active && (
+                        <motion.div
+                          initial={{ x: '-100%' }}
+                          animate={{ x: '100%' }}
+                          transition={{
+                            duration: 1.4,
+                            repeat: Infinity,
+                            repeatDelay: 1.2,
+                            ease: 'easeInOut',
+                          }}
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                         />
                       )}
 
                       <div className="relative flex flex-col items-center">
-                        <span className="text-2xl">{tab.icon}</span>
+                        <motion.span
+                          animate={
+                            active
+                              ? { rotate: [0, -12, 12, -6, 0], scale: [1, 1.25, 1.15, 1.2, 1.15] }
+                              : { rotate: 0, scale: 1 }
+                          }
+                          transition={{
+                            duration: 0.6,
+                            ease: 'easeInOut',
+                          }}
+                          className="text-2xl"
+                        >
+                          {tab.icon}
+                        </motion.span>
 
                         <span
                           className={`mt-1 font-semibold ${
@@ -426,8 +449,9 @@ export default function ReminderDashboard() {
 
                         <motion.span
                           key={insuranceCounts[tab.value]}
-                          initial={{ scale: 0.7, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
+                          initial={{ scale: 0.6, opacity: 0, y: -6 }}
+                          animate={{ scale: 1, opacity: 1, y: 0 }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 18 }}
                           className={`text-xs mt-1 px-2 py-0.5 rounded-full ${
                             active
                               ? 'bg-white/20 text-white'
@@ -437,7 +461,7 @@ export default function ReminderDashboard() {
                           {insuranceCounts[tab.value]} Notes
                         </motion.span>
                       </div>
-                    </button>
+                    </motion.button>
                   );
                 })}
               </div>
@@ -458,8 +482,13 @@ export default function ReminderDashboard() {
                 key={tab.value}
                 type="button"
                 onClick={() => setSelectedPriority(tab.value)}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.05, rotate: -1 }}
+                whileTap={{ scale: 0.96 }}
+                animate={
+                  isActive
+                    ? { scale: [1, 1.06, 1], transition: { duration: 0.45 } }
+                    : { scale: 1 }
+                }
                 className={`relative overflow-hidden rounded-2xl border p-5 text-left shadow-lg transition ${
                   isActive
                     ? `${tab.activeClass} shadow-xl`
@@ -468,13 +497,24 @@ export default function ReminderDashboard() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-2xl mb-2">{tab.icon}</p>
+                    <motion.p
+                      animate={
+                        isActive
+                          ? { rotate: [0, -15, 15, -8, 0], y: [0, -3, 0] }
+                          : { rotate: 0, y: 0 }
+                      }
+                      transition={{ duration: 0.55, ease: 'easeInOut' }}
+                      className="text-2xl mb-2"
+                    >
+                      {tab.icon}
+                    </motion.p>
                     <p className="font-bold text-xl">{tab.label}</p>
 
                     <motion.p
                       key={counts[tab.value]}
                       initial={{ y: 8, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                       className={`text-sm mt-1 ${
                         isActive ? 'opacity-90' : 'text-gray-500'
                       }`}
@@ -488,8 +528,12 @@ export default function ReminderDashboard() {
                       <motion.div
                         layoutId="activePriority"
                         initial={{ opacity: 0, scale: 0.5 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                        animate={{
+                          opacity: 1,
+                          scale: [0.5, 1.4, 1],
+                        }}
                         exit={{ opacity: 0, scale: 0.5 }}
+                        transition={{ duration: 0.4 }}
                         className="w-3 h-3 rounded-full bg-white/80"
                       />
                     )}
@@ -528,8 +572,6 @@ export default function ReminderDashboard() {
                     <h2 className="flex items-center gap-2 text-xl font-bold text-gray-800">
                       <span className="text-2xl">⚠️</span>
                       Overdue
-                      
-                     
                       <span className="text-gray-500">
                         ({overdueNotes.length})
                       </span>
@@ -582,11 +624,7 @@ export default function ReminderDashboard() {
                     }}
                     className="text-6xl mb-5"
                   >
-                    {selectedInsurance === 'vehicle'
-                      ? '🚗'
-                      : selectedInsurance === 'health'
-                      ? '❤️'
-                      : '🌐'}
+                    {selectedInsurance === 'vehicle' ? '🚗' : '❤️'}
                   </motion.div>
 
                   <h3 className="text-2xl font-bold text-white">
@@ -594,13 +632,11 @@ export default function ReminderDashboard() {
                   </h3>
 
                   <p className="text-gray-400 mt-2">
-                    {selectedInsurance === 'all'
-                      ? 'Everything is completed across all insurance types.'
-                      : `No ${selectedPriority} reminders for ${
-                          selectedInsurance === 'vehicle'
-                            ? 'Vehicle Insurance'
-                            : 'Health Insurance'
-                        }.`}
+                    {`No ${selectedPriority} reminders for ${
+                      selectedInsurance === 'vehicle'
+                        ? 'Vehicle Insurance'
+                        : 'Health Insurance'
+                    }.`}
                   </p>
                 </motion.div>
               )}
