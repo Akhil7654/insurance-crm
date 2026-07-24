@@ -13,7 +13,7 @@ export default function HomePage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-xl"
+        className="w-full max-w-lg"
       >
         {/* Header */}
         <div className="text-center mb-10">
@@ -25,9 +25,8 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Cards */}
+        {/* Cards Grid */}
         <div className="grid gap-6">
-
           {/* 🚗 Vehicle Insurance */}
           <motion.button
             whileHover={{ scale: 1.03 }}
@@ -37,14 +36,11 @@ export default function HomePage() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold">
-                  🚗 Vehicle Insurance
-                </h2>
+                <h2 className="text-2xl font-bold">🚗 Vehicle Insurance</h2>
                 <p className="text-blue-100 mt-1">
-                  View and manage vehicle insurance clients
+                  View and manage vehicle clients
                 </p>
               </div>
-
               <span className="text-3xl opacity-80 group-hover:translate-x-1 transition-transform">
                 →
               </span>
@@ -60,37 +56,11 @@ export default function HomePage() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold">
-                  ❤️ Health Insurance
-                </h2>
+                <h2 className="text-2xl font-bold">❤️ Health Insurance</h2>
                 <p className="text-green-100 mt-1">
                   Manage health insurance clients
                 </p>
               </div>
-
-              <span className="text-3xl opacity-80 group-hover:translate-x-1 transition-transform">
-                →
-              </span>
-            </div>
-          </motion.button>
-
-          {/* 💰 Investment */}
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => router.push('/investment')}
-            className="group bg-gradient-to-r from-amber-500 to-yellow-400 text-white p-8 rounded-2xl shadow-lg text-left cursor-pointer"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">
-                  💰 Investment
-                </h2>
-                <p className="text-yellow-100 mt-1">
-                  Manage investment clients and portfolios
-                </p>
-              </div>
-
               <span className="text-3xl opacity-80 group-hover:translate-x-1 transition-transform">
                 →
               </span>
@@ -98,31 +68,22 @@ export default function HomePage() {
           </motion.button>
 
           {/* 📅 Reminder Dashboard */}
-          <motion.div
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-          >
+          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
             <Link
               href="/reminders"
               className="block bg-gray-900 text-white p-8 rounded-2xl shadow-lg"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold">
-                    📅 Reminder Dashboard
-                  </h2>
+                  <h2 className="text-2xl font-bold">📅 Reminder Dashboard</h2>
                   <p className="text-gray-400 mt-1">
                     Track follow-ups and reminders
                   </p>
                 </div>
-
-                <span className="text-3xl opacity-80">
-                  →
-                </span>
+                <span className="text-3xl opacity-80">→</span>
               </div>
             </Link>
           </motion.div>
-
         </div>
 
         {/* Footer */}
