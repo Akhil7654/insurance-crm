@@ -16,6 +16,35 @@ import HistoryTimeline from '@/components/HistoryTimeline';
 import QuotesSection from '@/components/QuotesSection';
 import DocumentsSection from '@/components/DocumentsSection';
 
+const priorityOptions = [
+  { value: 'HOT', label: 'Hot', color: '#EF6461' },
+  { value: 'WARM', label: 'Warm', color: '#E3A857' },
+  { value: 'COOL', label: 'Cool', color: '#5B8DEF' },
+] as const;
+
+const CalendarIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <rect x="3.5" y="5" width="17" height="16" rx="2" />
+    <path d="M8 3v4M16 3v4M3.5 10h17" />
+  </svg>
+);
+
+const BellIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <path d="M6 8.5a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 12.5 6 8.5Z" />
+    <path d="M10 18a2 2 0 0 0 4 0" />
+  </svg>
+);
+
+const CarIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <path d="M4 16h16v-3.2a1 1 0 0 0-.6-.92L17 10l-1.6-3.6A2 2 0 0 0 13.6 5H10.4a2 2 0 0 0-1.8 1.4L7 10l-2.4 1.88a1 1 0 0 0-.6.92V16Z" />
+    <path d="M4 12.5h16" />
+    <circle cx="7.5" cy="16" r="1.75" />
+    <circle cx="16.5" cy="16" r="1.75" />
+  </svg>
+);
+
 export default function ClientHistoryPage() {
   const params = useParams();
   const clientId = Number(params.id);
@@ -73,22 +102,22 @@ export default function ClientHistoryPage() {
     }
   };
 
-const handleNoteUpdate = async (
-  noteObj: any,
-  text: string,
-  reminder: boolean,
-  priority: 'HOT' | 'WARM' | 'COOL'
-) => {
-  const updated = await updateNote(noteObj.id, {
-    text,
-    reminder,
-    priority,
-  });
+  const handleNoteUpdate = async (
+    noteObj: any,
+    text: string,
+    reminder: boolean,
+    priority: 'HOT' | 'WARM' | 'COOL'
+  ) => {
+    const updated = await updateNote(noteObj.id, {
+      text,
+      reminder,
+      priority,
+    });
 
-  setHistory((prev) =>
-    prev.map((n) => (n.id === noteObj.id ? updated : n))
-  );
-};
+    setHistory((prev) =>
+      prev.map((n) => (n.id === noteObj.id ? updated : n))
+    );
+  };
 
   const handleNoteDelete = async (noteObj: any) => {
     await deleteNote(noteObj.id);
@@ -97,60 +126,92 @@ const handleNoteUpdate = async (
 
   if (!client)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-300">
-        <p className="text-gray-800 text-lg font-bold font-sans">
-          Just a Moment - Loading Client Details..
-        </p>
+      <div className="min-h-screen flex items-center justify-center bg-[#05070C]">
+        <div className="flex items-center gap-3 text-[#7C879E] text-sm font-mono">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#5B8DEF] animate-pulse" />
+          Loading client details…
+        </div>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-white p-6">
-      <div className="max-w-3xl mx-auto space-y-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+    <div className="relative min-h-screen bg-[#05070C] text-[#F4F6FA] overflow-hidden">
+      <style>{`
+        @keyframes card-glow-spin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) {
+          * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+        }
+      `}</style>
+
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.35]"
+        style={{
+          backgroundImage: 'radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+        }}
+      />
+
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -top-32 -left-24 h-[380px] w-[380px] rounded-full bg-[#5B8DEF]/[0.08] blur-[120px]"
+        animate={{ x: [0, 30, 0], y: [0, 20, 0] }}
+        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+      />
+
+      <div className="relative mx-auto max-w-3xl px-6 py-14 sm:py-20 space-y-6">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <ClientSummary client={client} />
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
           <QuotesSection clientId={client.id} quotes={client.quotes} />
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <DocumentsSection clientId={client.id} />
         </motion.div>
 
         {conversions.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-800"
+            transition={{ delay: 0.15 }}
+            className="rounded-2xl bg-[#0F1420] border border-white/[0.06] p-6"
           >
-            <h2 className="text-xl font-semibold mb-4 text-gray-100">
-              Converted Lead Details
-            </h2>
+            <div className="flex items-center gap-2.5 mb-5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#34D399]/[0.12] text-[#34D399]">
+                <CarIcon />
+              </span>
+              <h2 className="text-[15px] font-medium text-[#F4F6FA]">Converted Lead Details</h2>
+            </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-gray-200 border border-gray-800 rounded-lg overflow-hidden">
-                <thead className="bg-gray-800">
-                  <tr>
-                    <th className="p-3 border border-gray-700">POSP</th>
-                    <th className="p-3 border border-gray-700">Customer Name</th>
-                    <th className="p-3 border border-gray-700">Company</th>
-                    <th className="p-3 border border-gray-700">Premium</th>
-                    <th className="p-3 border border-gray-700">Policy</th>
-                    <th className="p-3 border border-gray-700">Mobile</th>
+            <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+              <table className="w-full text-[13px] text-[#EDEFF3]">
+                <thead>
+                  <tr className="bg-white/[0.03] text-[#7C879E] font-mono text-[11px] uppercase tracking-wide">
+                    <th className="p-3 text-left font-medium">POSP</th>
+                    <th className="p-3 text-left font-medium">Customer</th>
+                    <th className="p-3 text-left font-medium">Company</th>
+                    <th className="p-3 text-left font-medium">Premium</th>
+                    <th className="p-3 text-left font-medium">Policy</th>
+                    <th className="p-3 text-left font-medium">Mobile</th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {conversions.map((c: any) => (
-                    <tr key={c.id} className="text-center hover:bg-gray-800 transition">
-                      <td className="p-3 border border-gray-800">{c.posp_code}</td>
-                      <td className="p-3 border border-gray-800">{c.customer_name}</td>
-                      <td className="p-3 border border-gray-800">{c.company_name}</td>
-                      <td className="p-3 border border-gray-800">₹{c.premium_amount}</td>
-                      <td className="p-3 border border-gray-800">{c.policy_number}</td>
-                      <td className="p-3 border border-gray-800">{c.customer_mobile}</td>
+                  {conversions.map((c: any, i: number) => (
+                    <tr
+                      key={c.id}
+                      className={`hover:bg-white/[0.03] transition-colors ${
+                        i !== conversions.length - 1 ? 'border-b border-white/[0.06]' : ''
+                      }`}
+                    >
+                      <td className="p-3 font-mono text-[#7C879E]">{c.posp_code}</td>
+                      <td className="p-3">{c.customer_name}</td>
+                      <td className="p-3">{c.company_name}</td>
+                      <td className="p-3 font-mono">₹{c.premium_amount}</td>
+                      <td className="p-3">{c.policy_number}</td>
+                      <td className="p-3 text-[#7C879E]">{c.customer_mobile}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -160,13 +221,12 @@ const handleNoteUpdate = async (
         )}
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-800"
+          transition={{ delay: 0.2 }}
+          className="rounded-2xl bg-[#0F1420] border border-white/[0.06] p-6"
         >
-          <h2 className="text-xl font-semibold mb-4 text-gray-100">
-            Add New Follow-up Note
-          </h2>
+          <h2 className="text-[15px] font-medium text-[#F4F6FA] mb-5">Add New Follow-up Note</h2>
 
           <form onSubmit={handleAddNote} className="space-y-4">
             <textarea
@@ -174,86 +234,91 @@ const handleNoteUpdate = async (
               value={note.text}
               onChange={(e) => setNote({ ...note, text: e.target.value })}
               placeholder="Write your follow-up note..."
-              className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows={3}
+              className="w-full bg-[#0A0E16] border border-white/[0.08] focus:border-[#5B8DEF]/50 text-[#F4F6FA] placeholder:text-[#565F76] text-sm p-3.5 rounded-xl outline-none transition-colors resize-none"
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm text-gray-400">Follow-up Date</label>
+              <div className="space-y-1.5">
+                <label className="text-[12px] font-medium text-[#7C879E]">Follow-up Date</label>
 
-                <input
-                  type="date"
-                  required
-                  value={note.follow_up_date}
-                  onChange={(e) =>
-                    setNote({ ...note, follow_up_date: e.target.value })
-                  }
-                  className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <div className="flex items-center gap-2.5 bg-[#0A0E16] border border-white/[0.08] focus-within:border-[#5B8DEF]/50 rounded-xl px-3.5 py-3 transition-colors">
+                  <span className="text-[#565F76]">
+                    <CalendarIcon />
+                  </span>
+                  <input
+                    type="date"
+                    required
+                    value={note.follow_up_date}
+                    onChange={(e) => setNote({ ...note, follow_up_date: e.target.value })}
+                    className="w-full bg-transparent text-[#F4F6FA] text-sm outline-none [color-scheme:dark]"
+                  />
+                </div>
 
                 {note.follow_up_date && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-[11px] text-[#565F76] font-mono">
                     Selected: {formatDate(note.follow_up_date)}
                   </p>
                 )}
               </div>
 
-              <div className="flex items-center gap-3 bg-gray-800 border border-gray-700 rounded-lg p-3">
+              <label className="flex items-center gap-3 bg-[#0A0E16] border border-white/[0.08] rounded-xl px-3.5 py-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={note.reminder}
-                  onChange={(e) =>
-                    setNote({ ...note, reminder: e.target.checked })
-                  }
-                  className="w-5 h-5 accent-blue-600"
+                  onChange={(e) => setNote({ ...note, reminder: e.target.checked })}
+                  className="w-4 h-4 accent-[#5B8DEF]"
                 />
 
-                <div>
-                  <p className="text-gray-100 font-medium">Enable Reminder</p>
-                  <p className="text-xs text-gray-400">
-                    Get notified on follow-up date
-                  </p>
-                </div>
-              </div>
+                <span className="flex items-center gap-2">
+                  <span className="text-[#7C879E]">
+                    <BellIcon />
+                  </span>
+                  <span>
+                    <span className="block text-[13px] font-medium text-[#F4F6FA]">Enable Reminder</span>
+                    <span className="block text-[11px] text-[#7C879E]">Notify on follow-up date</span>
+                  </span>
+                </span>
+              </label>
 
-              <div className="sm:col-span-2 bg-gray-800 border border-gray-700 rounded-lg p-4">
-                <p className="text-gray-100 font-medium mb-3">Lead Priority</p>
+              <div className="sm:col-span-2 bg-[#0A0E16] border border-white/[0.08] rounded-xl p-4">
+                <p className="text-[13px] font-medium text-[#F4F6FA] mb-3">Lead Priority</p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {[
-                    {
-                      value: 'HOT',
-                      label: '🔥 HOT',
-                      active: 'bg-red-600 text-white border-red-400 shadow-red-500/30',
-                    },
-                    {
-                      value: 'WARM',
-                      label: '🌤 WARM',
-                      active:
-                        'bg-yellow-500 text-black border-yellow-300 shadow-yellow-500/30',
-                    },
-                    {
-                      value: 'COOL',
-                      label: '❄ COOL',
-                      active:
-                        'bg-blue-600 text-white border-blue-400 shadow-blue-500/30',
-                    },
-                  ].map((item) => (
-                    <button
-                      key={item.value}
-                      type="button"
-                      onClick={() =>
-                        setNote({ ...note, priority: item.value })
-                      }
-                      className={`rounded-xl border px-4 py-3 font-semibold transition shadow-lg ${
-                        note.priority === item.value
-                          ? item.active
-                          : 'bg-gray-900 text-gray-300 border-gray-700 hover:bg-gray-700'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-3 gap-2.5">
+                  {priorityOptions.map((item) => {
+                    const active = note.priority === item.value;
+                    return (
+                      <button
+                        key={item.value}
+                        type="button"
+                        onClick={() => setNote({ ...note, priority: item.value })}
+                        className="relative rounded-lg p-[1px] overflow-hidden"
+                      >
+                        {active && (
+                          <div
+                            className="absolute -inset-[40%] opacity-90"
+                            style={{
+                              background: `conic-gradient(from 0deg, transparent 0%, ${item.color} 16%, transparent 32%)`,
+                              animation: 'card-glow-spin 3.2s linear infinite',
+                            }}
+                          />
+                        )}
+                        <div
+                          className={`relative z-10 rounded-[7px] px-3 py-2.5 border flex items-center justify-center gap-2 transition-colors ${
+                            active ? 'bg-[#0F1420] border-white/[0.02]' : 'bg-[#0F1420] border-white/[0.08] hover:border-white/[0.16]'
+                          }`}
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full" style={{ background: item.color }} />
+                          <span
+                            className="text-[13px] font-medium"
+                            style={{ color: active ? item.color : '#7C879E' }}
+                          >
+                            {item.label}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -261,14 +326,14 @@ const handleNoteUpdate = async (
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 transition text-white py-3 rounded-lg font-medium"
+              className="w-full bg-[#5B8DEF] hover:bg-[#4a7ce0] disabled:opacity-50 transition-colors text-white py-3 rounded-xl text-sm font-medium"
             >
-              {loading ? 'Saving...' : '+ Add Note'}
+              {loading ? 'Saving...' : 'Add Note'}
             </button>
           </form>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
           <HistoryTimeline
             notes={history}
             onNoteUpdate={handleNoteUpdate}
