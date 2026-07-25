@@ -16,7 +16,9 @@ from .models import (
     Quote,
     Note,
     Document,
-    LeadConversion
+    LeadConversion,
+    InvestmentDetails, 
+    InvestmentConversion,
 )
 from .serializers import (
     ClientSerializer,
@@ -26,7 +28,9 @@ from .serializers import (
     NoteSerializer,
     DocumentSerializer,
     ClientDetailSerializer,
-    LeadConversionSerializer
+    LeadConversionSerializer,
+    InvestmentConversionSerializer,
+    InvestmentDetailsSerializer,
 )
 
 
@@ -443,3 +447,137 @@ def delete_client_full(request, client_id):
 def debug_db(request):
     print("DB URL:", os.environ.get("DATABASE_URL"))
     return Response({"message": "check logs"})
+
+
+
+# ----------------------------- INVESTMENT -----------------------------
+class InvestmentDetailsViewSet(viewsets.ModelViewSet):
+    queryset = InvestmentDetails.objects.all()
+    serializer_class = InvestmentDetailsSerializer
+
+
+
+# ----------------------------- INVESTMENT LEAD CONVERSION -----------------------------
+@api_view(["POST"])
+def convert_investment_client(request, client_id):
+    try:
+        client = Client.objects.get(id=client_id)
+    except Client.DoesNotExist:
+        return Response({"error": "Client not found"}, status=404)
+
+    data = request.data.copy()
+    data["client"] = client.id
+
+    serializer = InvestmentConversionSerializer(data=data)
+
+    if serializer.is_valid():
+        serializer.save()
+        client.is_converted = True
+        client.save()
+
+        renewal_date = data.get("renewal_date")
+        if renewal_date:
+            inv, _ = InvestmentDetails.objects.get_or_create(client=client)
+            inv.renewal_date = renewal_date
+            inv.save()
+
+        return Response(serializer.data)
+
+    return Response(serializer.errors, status=400)
+
+
+# ----------------------------- INVESTMENT RENEWAL APIS -----------------------------
+@api_view(["GET"])
+def investment_renewal_summary(request):
+    month = request.query_params.get("month")
+    if not month:
+        return Response({"error": "month is required (YYYY-MM)"}, status=400)
+
+    start, end = month_range(month)
+    today = date.today()
+
+    qs = InvestmentDetails.objects.select_related("client").filter(
+        renewal_date__isnull=False,
+        renewal_date__gte=start,
+        renewal_date__lt=end
+    )
+
+    pending = qs.filter(renewal_date__gte=today).count()
+    missed = qs.filter(renewal_date__lt=today).count()
+
+    return Response({"month": month, "pending": pending, "missed": missed})
+
+
+@api_view(["GET"])
+def investment_renewal_list(request):
+    month = request.query_params.get("month")
+    status_key = request.query_params.get("status", "pending")
+
+    if not month:
+        return Response({"error": "month is required (YYYY-MM)"}, status=400)
+
+    start, end = month_range(month)
+    today = date.today()
+
+    qs = InvestmentDetails.objects.select_related("client").filter(
+        renewal_date__isnull=False,
+        renewal_date__gte=start,
+        renewal_date__lt=end
+    )
+
+    if status_key == "missed":
+        qs = qs.filter(renewal_date__lt=today)
+    else:
+        qs = qs.filter(renewal_date__gte=today)
+
+    data = []
+    for inv in qs.order_by("renewal_date"):
+        data.append({
+            "id": inv.id,
+            "renewal_date": inv.renewal_date,
+            "investment_type": inv.investment_type,
+            "remarks": inv.remarks,
+            "client": {
+                "id": inv.client.id,
+                "name": inv.client.name,
+                "mobile": inv.client.mobile,
+                "place": inv.client.place,
+                "insurance_type": inv.client.insurance_type,
+            }
+        })
+
+    return Response(data)
+
+
+@api_view(["POST"])
+def investment_renew(request, client_id):
+    next_date = request.data.get("next_renewal_date")
+    parsed = parse_date(next_date) if next_date else None
+    if not parsed:
+        return Response({"error": "next_renewal_date is required (YYYY-MM-DD)"}, status=400)
+
+    inv = InvestmentDetails.objects.filter(client_id=client_id).first()
+    if not inv:
+        return Response({"error": "InvestmentDetails not found for this client"}, status=404)
+
+    inv.renewal_date = parsed
+    inv.save()
+
+    return Response({"success": True, "client_id": client_id, "next_renewal_date": str(parsed)})
+
+
+@api_view(["POST"])
+def investment_set_renewal_date(request, client_id):
+    renewal_date = request.data.get("renewal_date")
+    parsed = parse_date(renewal_date) if renewal_date else None
+    if not parsed:
+        return Response({"error": "renewal_date is required (YYYY-MM-DD)"}, status=400)
+
+    inv = InvestmentDetails.objects.filter(client_id=client_id).first()
+    if not inv:
+        return Response({"error": "InvestmentDetails not found for this client"}, status=404)
+
+    inv.renewal_date = parsed
+    inv.save()
+
+    return Response({"success": True, "client_id": client_id, "renewal_date": str(parsed)})

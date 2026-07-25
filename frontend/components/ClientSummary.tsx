@@ -6,11 +6,14 @@ import {
   updateClient,
   updateHealthInsurance,
   updateVehicleInsurance,
+  updateInvestmentDetails,
   renewHealthClient,
   renewVehicleClient,
+  renewInvestmentClient,
   deleteClientFull,
 } from '@/lib/api';
 import ConvertModal from '@/components/ConvertModal';
+import InvestmentConvertModal from './InvestmentConvertModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const fadeUp = {
@@ -86,6 +89,16 @@ export default function ClientSummary({ client }: any) {
       ...prev,
       vehicle_details: {
         ...(prev.vehicle_details || {}),
+        ...patch,
+      },
+    }));
+  };
+
+  const setInvestmentPatch = (patch: any) => {
+    setForm((prev: any) => ({
+      ...prev,
+      investment_details: {
+        ...(prev.investment_details || {}),
         ...patch,
       },
     }));
@@ -170,6 +183,27 @@ export default function ClientSummary({ client }: any) {
         }));
       }
 
+      // 4) investment extra update (investment_type / remarks)
+      if (form.insurance_type === 'investment' && form.investment_details?.id) {
+        const payload = {
+          investment_type: form.investment_details?.investment_type || '',
+          remarks: form.investment_details?.remarks || '',
+        };
+
+        const updatedInvestment = await updateInvestmentDetails(
+          form.investment_details.id,
+          payload
+        );
+
+        setForm((prev: any) => ({
+          ...prev,
+          investment_details: {
+            ...(prev.investment_details || {}),
+            ...updatedInvestment,
+          },
+        }));
+      }
+
       setEditing(false);
     } finally {
       setSaving(false);
@@ -179,10 +213,13 @@ export default function ClientSummary({ client }: any) {
   // ---------------- ACTIONS (Convert / Renew / Delete) ----------------
 
   const isConverted = !!form.is_converted;
+
   const renewalDate =
     form.insurance_type === 'vehicle'
       ? form.vehicle_details?.renewal_date
-      : form.health_details?.renewal_date;
+      : form.insurance_type === 'health'
+      ? form.health_details?.renewal_date
+      : form.investment_details?.renewal_date;
 
   const isRenewed = isRenewedByDate(renewalDate);
 
@@ -199,11 +236,17 @@ export default function ClientSummary({ client }: any) {
           ...prev,
           vehicle_details: { ...(prev.vehicle_details || {}), renewal_date: next },
         }));
-      } else {
+      } else if (form.insurance_type === 'health') {
         await renewHealthClient(form.id, next);
         setForm((prev: any) => ({
           ...prev,
           health_details: { ...(prev.health_details || {}), renewal_date: next },
+        }));
+      } else {
+        await renewInvestmentClient(form.id, next);
+        setForm((prev: any) => ({
+          ...prev,
+          investment_details: { ...(prev.investment_details || {}), renewal_date: next },
         }));
       }
 
@@ -224,7 +267,13 @@ export default function ClientSummary({ client }: any) {
       setDeleting(true);
       await deleteClientFull(form.id);
       alert('Deleted ✅');
-      router.push(form.insurance_type === 'vehicle' ? '/vehicle' : '/health');
+      router.push(
+        form.insurance_type === 'vehicle'
+          ? '/vehicle'
+          : form.insurance_type === 'health'
+          ? '/health'
+          : '/investment'
+      );
     } catch {
       alert('Delete failed');
     } finally {
@@ -363,6 +412,35 @@ export default function ClientSummary({ client }: any) {
                         <option value="third_party">Third Party</option>
                       </select>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ✅ Investment edit fields — same UI pattern as health/vehicle */}
+              {form.insurance_type === 'investment' && (
+                <div className="mt-6 space-y-3">
+                  <p className="text-sm font-bold text-gray-200 underline">Investment Fields</p>
+
+                  <div className="bg-gray-950/60 border border-gray-800 rounded-2xl p-3">
+                    <p className="text-gray-400 text-xs mb-2">Investment Type</p>
+                    <input
+                      type="text"
+                      value={form.investment_details?.investment_type || ''}
+                      onChange={(e) => setInvestmentPatch({ investment_type: e.target.value })}
+                      placeholder="Eg: Mutual Fund / SIP / ULIP"
+                      className="w-full bg-gray-900/60 border border-gray-700 focus:border-gray-400 focus:ring-2 focus:ring-gray-700 outline-none p-3 rounded-2xl font-medium text-white"
+                    />
+                  </div>
+
+                  <div className="bg-gray-950/60 border border-gray-800 rounded-2xl p-3">
+                    <p className="text-gray-400 text-xs mb-2">Remarks</p>
+                    <textarea
+                      value={form.investment_details?.remarks || ''}
+                      onChange={(e) => setInvestmentPatch({ remarks: e.target.value })}
+                      placeholder="Type remarks..."
+                      rows={4}
+                      className="w-full bg-gray-900/60 border border-gray-700 focus:border-gray-400 focus:ring-2 focus:ring-gray-700 outline-none p-3 rounded-2xl font-medium text-white"
+                    />
                   </div>
                 </div>
               )}
@@ -528,6 +606,34 @@ export default function ClientSummary({ client }: any) {
                 </motion.div>
               )}
 
+              {/* Investment info block */}
+              {form.insurance_type === 'investment' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 1.01 }}
+                  className="mt-5 pt-4 border-t border-gray-800 text-sm bg-gray-950/70 rounded-2xl p-4"
+                >
+                  <p className="font-bold mb-3 text-white underline">Investment Information</p>
+
+                  <div className="bg-gray-900/70 border border-gray-800 rounded-2xl p-3 mb-3">
+                    <p className="text-gray-400 text-xs">Investment Type</p>
+                    <p className="text-white font-bold">
+                      {form.investment_details?.investment_type || '-'}
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-900/70 border border-gray-800 rounded-2xl p-3">
+                    <p className="text-gray-400 text-xs mb-1">Remarks</p>
+                    <p className="text-white font-medium whitespace-pre-wrap">
+                      {form.investment_details?.remarks?.trim()
+                        ? form.investment_details.remarks
+                        : 'No remarks'}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
               {/* ACTION BUTTONS */}
               <div className="mt-5 flex flex-col sm:flex-row gap-2">
                 {!isConverted && (
@@ -572,8 +678,16 @@ export default function ClientSummary({ client }: any) {
           )}
         </AnimatePresence>
 
-        {/* Convert Modal */}
-        {showConvert && (
+        {/* Convert Modal — switches based on insurance type */}
+        {showConvert && form.insurance_type === 'investment' && (
+          <InvestmentConvertModal
+            clientId={form.id}
+            onClose={() => setShowConvert(false)}
+            onSuccess={() => window.location.reload()}
+          />
+        )}
+
+        {showConvert && form.insurance_type !== 'investment' && (
           <ConvertModal
             clientId={form.id}
             onClose={() => setShowConvert(false)}

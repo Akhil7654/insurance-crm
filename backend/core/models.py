@@ -5,6 +5,7 @@ class Client(models.Model):
     INSURANCE_TYPE_CHOICES = (
         ('vehicle', 'Vehicle'),
         ('health', 'Health'),
+        ('investment', 'Investment'),
     )
 
     name = models.CharField(max_length=100)
@@ -16,6 +17,41 @@ class Client(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.insurance_type}"
+    
+
+class InvestmentDetails(models.Model):
+    client = models.OneToOneField(
+        Client,
+        on_delete=models.CASCADE,
+        related_name='investment_details'
+    )
+    investment_type = models.CharField(max_length=200, blank=True, default='')
+    remarks = models.TextField(blank=True, default='')
+
+    renewal_date = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.client.name} - Investment"
+
+
+class InvestmentConversion(models.Model):
+    client = models.ForeignKey(
+        Client,
+        on_delete=models.CASCADE,
+        related_name="investment_conversions"
+    )
+
+    posp_code = models.CharField(max_length=100)
+    company_name = models.CharField(max_length=200)
+    investment_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    policy_name = models.CharField(max_length=200)
+    investment_paying_term = models.CharField(max_length=100)
+    renewal_date = models.DateField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Investment Conversion - {self.client.name}"
 
 
 class LeadConversion(models.Model):

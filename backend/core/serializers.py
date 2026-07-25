@@ -4,6 +4,8 @@ from .models import (
     Client,
     VehicleInsurance,
     HealthInsurance,
+    InvestmentDetails,
+    InvestmentConversion,
     Quote,
     Note,
     Document,
@@ -23,10 +25,22 @@ class HealthInsuranceSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-# ✅ UPDATED: include vehicle_details + health_details in list serializer too
+class InvestmentDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvestmentDetails
+        fields = '__all__'
+
+
+class InvestmentConversionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvestmentConversion
+        fields = '__all__'
+
+
 class ClientSerializer(serializers.ModelSerializer):
     vehicle_details = VehicleInsuranceSerializer(read_only=True)
     health_details = HealthInsuranceSerializer(read_only=True)
+    investment_details = InvestmentDetailsSerializer(read_only=True)   
 
     class Meta:
         model = Client
@@ -40,6 +54,7 @@ class ClientSerializer(serializers.ModelSerializer):
             'is_converted',
             'vehicle_details',
             'health_details',
+            'investment_details',   
         ]
 
 
@@ -50,30 +65,17 @@ class QuoteSerializer(serializers.ModelSerializer):
 
 
 class NoteSerializer(serializers.ModelSerializer):
-    client_name = serializers.CharField(
-        source="client.name",
-        read_only=True
-    )
-
-    client_insurance_type = serializers.CharField(
-        source="client.insurance_type",
-        read_only=True
-    )
+    client_name = serializers.CharField(source="client.name", read_only=True)
+    client_insurance_type = serializers.CharField(source="client.insurance_type", read_only=True)
 
     class Meta:
         model = Note
         fields = [
-            "id",
-            "client",
-            "client_name",
-            "client_insurance_type",
-            "text",
-            "follow_up_date",
-            "reminder",
-            "priority",
-            "created_at",
-            "completed",
+            "id", "client", "client_name", "client_insurance_type",
+            "text", "follow_up_date", "reminder", "priority",
+            "created_at", "completed",
         ]
+
 
 class DocumentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -90,25 +92,17 @@ class LeadConversionSerializer(serializers.ModelSerializer):
 class ClientDetailSerializer(serializers.ModelSerializer):
     vehicle_details = VehicleInsuranceSerializer(read_only=True)
     health_details = HealthInsuranceSerializer(read_only=True)
+    investment_details = InvestmentDetailsSerializer(read_only=True)                    
     quotes = QuoteSerializer(many=True, read_only=True)
     notes = NoteSerializer(many=True, read_only=True)
     documents = DocumentSerializer(many=True, read_only=True)
     conversions = LeadConversionSerializer(many=True, read_only=True)
+    investment_conversions = InvestmentConversionSerializer(many=True, read_only=True)  
 
     class Meta:
         model = Client
         fields = [
-            'id',
-            'name',
-            'mobile',
-            'place',
-            'insurance_type',
-            'created_at',
-            'is_converted',
-            'vehicle_details',
-            'health_details',
-            'quotes',
-            'notes',
-            'documents',
-            'conversions'
+            'id', 'name', 'mobile', 'place', 'insurance_type', 'created_at', 'is_converted',
+            'vehicle_details', 'health_details', 'investment_details',
+            'quotes', 'notes', 'documents', 'conversions', 'investment_conversions',
         ]

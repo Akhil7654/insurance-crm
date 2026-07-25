@@ -232,3 +232,79 @@ export async function setVehicleRenewalDate(clientId: number, renewalDate: strin
   if (!res.ok) throw new Error('Failed to set renewal date');
   return res.json();
 }
+
+
+
+
+// ---------------- INVESTMENT ----------------
+export async function createInvestmentDetails(data: any) {
+  const res = await fetch(`${API_BASE}/investment-details/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to create investment details');
+  return res.json();
+}
+
+export async function updateInvestmentDetails(id: number, data: any) {
+  const res = await fetch(`${API_BASE}/investment-details/${id}/`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update investment details');
+  return res.json();
+}
+
+export async function getInvestmentClients() {
+  const res = await fetch(`${API_BASE}/clients/?insurance_type=investment`);
+  if (!res.ok) throw new Error('Failed to load investment clients');
+  return res.json();
+}
+
+export async function convertInvestmentClient(clientId: number, data: any) {
+  const res = await fetch(`${API_BASE}/convert-investment-client/${clientId}/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || 'Convert failed');
+  }
+  return res.json();
+}
+
+// ---------------- INVESTMENT RENEWALS ----------------
+export async function getInvestmentRenewalSummary(month: string) {
+  const res = await fetch(`${API_BASE}/renewals/investment/summary/?month=${month}`);
+  if (!res.ok) throw new Error('Failed to load investment renewal summary');
+  return res.json();
+}
+
+export async function getInvestmentRenewals(month: string, status: 'pending' | 'missed') {
+  const res = await fetch(`${API_BASE}/renewals/investment/?month=${month}&status=${status}`);
+  if (!res.ok) throw new Error('Failed to load investment renewals list');
+  return res.json();
+}
+
+export async function renewInvestmentClient(clientId: number, nextRenewalDate: string) {
+  const res = await fetch(`${API_BASE}/renewals/investment/${clientId}/renew/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ next_renewal_date: nextRenewalDate }),
+  });
+  if (!res.ok) throw new Error('Failed to renew investment client');
+  return res.json();
+}
+
+export async function setInvestmentRenewalDate(clientId: number, renewalDate: string) {
+  const res = await fetch(`${API_BASE}/renewals/investment/${clientId}/set/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ renewal_date: renewalDate }),
+  });
+  if (!res.ok) throw new Error('Failed to set investment renewal date');
+  return res.json();
+}

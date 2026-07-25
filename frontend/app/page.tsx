@@ -67,6 +67,26 @@ export default function HomePage() {
             </div>
           </motion.button>
 
+          {/* 💰 Investment */}
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => router.push('/investment')}
+            className="group bg-gradient-to-r from-amber-600 to-orange-500 text-white p-8 rounded-2xl shadow-lg text-left cursor-pointer"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">💰 Investment</h2>
+                <p className="text-amber-100 mt-1">
+                  Manage investment clients
+                </p>
+              </div>
+              <span className="text-3xl opacity-80 group-hover:translate-x-1 transition-transform">
+                →
+              </span>
+            </div>
+          </motion.button>
+
           {/* 📅 Reminder Dashboard */}
           <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
             <Link
