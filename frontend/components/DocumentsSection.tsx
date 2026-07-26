@@ -13,13 +13,41 @@ type Document = {
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 
+const FolderIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <path d="M3.5 6.5A1.5 1.5 0 0 1 5 5h4.5l2 2.5H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19.5H5A1.5 1.5 0 0 1 3.5 18Z" />
+  </svg>
+);
+
+const UploadIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+    <path d="M12 16V4M7 9l5-5 5 5" />
+    <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+  </svg>
+);
+
+const FileIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <path d="M6 3.5h9l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" />
+    <path d="M8 9h8M8 13h8M8 17h5" />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+    <path d="M5 7h14M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13" />
+  </svg>
+);
+
+const inputClass =
+  'w-full bg-[#0A0E16] border border-white/[0.08] focus:border-[#5B8DEF]/50 text-[#F4F6FA] text-sm p-3 rounded-xl outline-none transition-colors';
+
 export default function DocumentsSection({ clientId }: { clientId: number }) {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [documentType, setDocumentType] = useState('rc');
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // backend origin (example: https://xyz.onrender.com)
   const BACKEND_ORIGIN = useMemo(() => {
     try {
       return new URL(API_BASE).origin;
@@ -66,82 +94,90 @@ export default function DocumentsSection({ clientId }: { clientId: number }) {
   };
 
   return (
-    <div className="bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-800">
-      <h2 className="text-xl font-semibold mb-5 text-white">
-        Client Documents
-      </h2>
+    <div className="rounded-2xl bg-[#0F1420] border border-white/[0.06] p-6">
+      <div className="flex items-center gap-2.5 mb-5">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#5B8DEF]/[0.12] text-[#5B8DEF]">
+          <FolderIcon />
+        </span>
+        <h2 className="text-[15px] font-medium text-[#F4F6FA]">Client Documents</h2>
+      </div>
 
-      <form onSubmit={handleUpload} className="space-y-4 mb-6 text-white">
+      <form onSubmit={handleUpload} className="space-y-3 mb-6 pb-6 border-b border-white/[0.06]">
         <select
           value={documentType}
           onChange={(e) => setDocumentType(e.target.value)}
-          className="w-full border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none p-3 rounded-xl cursor-pointer text-yellow-400 font-semibold"
+          className={inputClass}
         >
-          <option value="rc">RC</option>
-          <option value="aadhaar">Aadhaar</option>
-          <option value="policy">Old Policy</option>
+          <option className="bg-[#0A0E16]" value="rc">RC</option>
+          <option className="bg-[#0A0E16]" value="aadhaar">Aadhaar</option>
+          <option className="bg-[#0A0E16]" value="policy">Old Policy</option>
         </select>
 
         <input
           type="file"
           required
           onChange={(e) => setFile(e.target.files?.[0] || null)}
-          className="w-full border border-gray-200 p-2 rounded-xl cursor-pointer"
+          className="w-full text-[#7C879E] text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border file:border-white/[0.08] file:bg-white/[0.04] file:text-[#F4F6FA] file:text-[13px] file:font-medium hover:file:bg-white/[0.08] file:cursor-pointer cursor-pointer"
         />
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white py-2.5 rounded-xl font-semibold shadow transition cursor-pointer"
+          className="w-full flex items-center justify-center gap-1.5 bg-[#5B8DEF]/10 hover:bg-[#5B8DEF]/20 text-[#5B8DEF] border border-[#5B8DEF]/30 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-60"
         >
-          {loading ? 'Uploading...' : '+ Upload Document'}
+          <UploadIcon /> {loading ? 'Uploading...' : 'Upload Document'}
         </button>
       </form>
 
       {documents.length === 0 ? (
-        <p className="text-gray-500 text-sm">No documents uploaded yet</p>
+        <p className="text-[#565F76] text-[13px]">No documents uploaded yet</p>
       ) : (
-        <ul className="space-y-3">
+        <div className="space-y-2.5">
           {documents.map((doc) => {
             const fileUrl = doc.file.startsWith('http')
               ? doc.file
-              : `${BACKEND_ORIGIN}${doc.file}`; // ✅ no localhost
+              : `${BACKEND_ORIGIN}${doc.file}`;
 
             return (
-              <li
+              <div
                 key={doc.id}
-                className="flex justify-between items-center bg-gray-950 border border-gray-800 p-4 rounded-xl hover:shadow-sm transition"
+                className="flex justify-between items-center bg-[#0A0E16] border border-white/[0.08] p-4 rounded-xl"
               >
-                <div>
-                  <p className="font-medium text-white capitalize">
-                    {doc.document_type.replace('_', ' ')}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {new Date(doc.uploaded_at).toLocaleDateString()}
-                  </p>
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-[#7C879E]">
+                    <FileIcon />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-medium text-[14px] text-[#F4F6FA] capitalize truncate">
+                      {doc.document_type.replace('_', ' ')}
+                    </p>
+                    <p className="text-[11px] text-[#565F76] font-mono">
+                      {new Date(doc.uploaded_at).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <a
+                <div className="flex items-center gap-3 shrink-0">
+                  
                     href={fileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-400 hover:underline text-sm font-medium"
+                    className="text-[#5B8DEF] hover:text-[#7ba3f5] text-[13px] font-medium transition-colors"
                   >
                     View
                   </a>
 
                   <button
                     onClick={() => handleDelete(doc.id)}
-                    className="text-red-400 hover:text-red-500 text-sm cursor-pointer"
+                    className="text-[#EF6461] hover:text-[#f18178] transition-colors"
                   >
-                    🗑️
+                    <TrashIcon />
                   </button>
                 </div>
-              </li>
+              </div>
             );
           })}
-        </ul>
+        </div>
       )}
     </div>
   );
