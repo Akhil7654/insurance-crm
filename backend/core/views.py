@@ -101,6 +101,24 @@ class NoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all().order_by('follow_up_date')
     serializer_class = NoteSerializer
 
+    def perform_create(self, serializer):
+        note = serializer.save()
+        # If this new note has its reminder on, switch off reminder
+        # on every other note for the same client.
+        if note.reminder:
+            Note.objects.filter(
+                client=note.client, reminder=True
+            ).exclude(id=note.id).update(reminder=False)
+
+    def perform_update(self, serializer):
+        note = serializer.save()
+        # Same rule applies if an existing note is edited to turn its
+        # reminder on — it should still be the only active one.
+        if note.reminder:
+            Note.objects.filter(
+                client=note.client, reminder=True
+            ).exclude(id=note.id).update(reminder=False)
+
     @action(detail=False, methods=['get'])
     def today(self, request):
         today = now().date()
