@@ -10,6 +10,126 @@ import {
   updateQuote,
   deleteQuote,
 } from '@/lib/api';
+import { motion } from 'framer-motion';
+
+const priorityOptions = [
+  { value: 'HOT', label: 'Hot', color: '#EF6461' },
+  { value: 'WARM', label: 'Warm', color: '#E3A857' },
+  { value: 'COOL', label: 'Cool', color: '#5B8DEF' },
+] as const;
+
+/* ------------------------------------------------------- */
+/* ICONS */
+/* ------------------------------------------------------- */
+
+const UserIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <circle cx="12" cy="8" r="3.2" />
+    <path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" />
+  </svg>
+);
+
+const PhoneIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 9.5 9.5 0 0 0 3 .5 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A16 16 0 0 1 3 5a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 9.5 9.5 0 0 0 .5 3 1 1 0 0 1-.25 1L6.6 10.8Z" />
+  </svg>
+);
+
+const PinIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <path d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.4-6.5 11-6.5 11Z" />
+    <circle cx="12" cy="10" r="2.2" />
+  </svg>
+);
+
+const CarIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <path d="M4 16h16v-3.2a1 1 0 0 0-.6-.92L17 10l-1.6-3.6A2 2 0 0 0 13.6 5H10.4a2 2 0 0 0-1.8 1.4L7 10l-2.4 1.88a1 1 0 0 0-.6.92V16Z" />
+    <path d="M4 12.5h16" />
+    <circle cx="7.5" cy="16" r="1.75" />
+    <circle cx="16.5" cy="16" r="1.75" />
+  </svg>
+);
+
+const ShieldIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <path d="M12 3.5 5 6v6c0 4.5 3 7.5 7 8.5 4-1 7-4 7-8.5V6l-7-2.5Z" />
+  </svg>
+);
+
+const CalendarIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <rect x="3.5" y="5" width="17" height="16" rx="2" />
+    <path d="M8 3v4M16 3v4M3.5 10h17" />
+  </svg>
+);
+
+const BellIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <path d="M6 8.5a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 12.5 6 8.5Z" />
+    <path d="M10 18a2 2 0 0 0 4 0" />
+  </svg>
+);
+
+const NoteIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <path d="M6 3.5h9l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" />
+    <path d="M8 9h8M8 13h8M8 17h5" />
+  </svg>
+);
+
+const TagIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <path d="m20.6 12.6-8 8a2 2 0 0 1-2.8 0l-6.4-6.4a2 2 0 0 1 0-2.8l8-8A2 2 0 0 1 12.8 3H19a1 1 0 0 1 1 1v6.2a2 2 0 0 1-.4 1.4Z" />
+    <circle cx="15.5" cy="8.5" r="1.2" />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <path d="M20 6 9 17l-5-5" />
+  </svg>
+);
+
+const PencilIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+    <path d="M5 7h14M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13" />
+  </svg>
+);
+
+/* ------------------------------------------------------- */
+/* FIELD WRAPPER */
+/* ------------------------------------------------------- */
+
+function Field({
+  icon,
+  label,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="flex items-center gap-2 text-[12px] font-medium text-[#E3A857]">
+        {icon}
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+const inputClass =
+  'w-full bg-[#0A0E16] border border-white/[0.08] focus:border-[#E3A857]/50 text-[#F4F6FA] placeholder:text-[#E3A857]/40 text-sm p-3.5 rounded-xl outline-none transition-colors disabled:opacity-50';
 
 export default function VehiclePage() {
   const router = useRouter();
@@ -78,7 +198,6 @@ export default function VehiclePage() {
       });
 
       setClientId(client.id);
-      alert('Client created ✅ Now add quotes and follow-up');
     } catch {
       alert('Error saving data');
     } finally {
@@ -183,7 +302,6 @@ export default function VehiclePage() {
         priority: note.priority,
       });
 
-      alert('Client details completed ✅');
       router.push('/vehicle');
     } catch {
       alert('Failed to add note');
@@ -197,298 +315,373 @@ export default function VehiclePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-xl mx-auto bg-indigo-950 p-6 rounded-xl shadow">
-        <h2 className="text-xl font-bold mb-4 text-white">
-          Add Vehicle Insurance Client
-        </h2>
+    <div className="relative min-h-screen bg-[#05070C] text-[#F4F6FA] overflow-hidden">
+      <style>{`
+        @keyframes card-glow-spin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) {
+          * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+        }
+      `}</style>
 
-        <div className="space-y-4">
-          <input
-            name="name"
-            placeholder="Client Name"
-            value={form.name}
-            onChange={handleChange}
-            disabled={clientId !== null}
-            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans disabled:opacity-60"
-          />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.35]"
+        style={{
+          backgroundImage: 'radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+        }}
+      />
 
-          <input
-            name="mobile"
-            placeholder="Phone Number"
-            value={form.mobile}
-            onChange={handleChange}
-            disabled={clientId !== null}
-            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans disabled:opacity-60"
-          />
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -top-32 -right-24 h-[380px] w-[380px] rounded-full bg-[#E3A857]/[0.08] blur-[120px]"
+        animate={{ x: [0, -20, 0], y: [0, 20, 0] }}
+        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+      />
 
-          <input
-            name="place"
-            placeholder="Place"
-            value={form.place}
-            onChange={handleChange}
-            disabled={clientId !== null}
-            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans disabled:opacity-60"
-          />
+      <div className="relative mx-auto max-w-xl px-6 py-14 sm:py-20">
+        {/* Header */}
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-8">
+          <p className="font-mono text-[11px] tracking-[0.18em] text-[#E3A857] uppercase mb-3">
+            VH · New Record
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Add Vehicle Insurance Client</h1>
+        </motion.div>
 
-          <input
-            name="vehicle_type"
-            placeholder="Vehicle Type (Car / Bike)"
-            value={form.vehicle_type}
-            onChange={handleChange}
-            disabled={clientId !== null}
-            className="w-full border p-3 rounded placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans disabled:opacity-60"
-          />
+        {/* Step indicator */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.06 }}
+          className="flex items-center gap-3 mb-6"
+        >
+          <div className="flex items-center gap-2">
+            <span
+              className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-mono border ${
+                clientId ? 'bg-[#34D399]/15 border-[#34D399]/40 text-[#34D399]' : 'bg-[#E3A857]/15 border-[#E3A857]/40 text-[#E3A857]'
+              }`}
+            >
+              {clientId ? <CheckIcon /> : '1'}
+            </span>
+            <span className={`text-[13px] font-medium ${clientId ? 'text-[#7C879E]' : 'text-[#F4F6FA]'}`}>
+              Client details
+            </span>
+          </div>
 
-          <select
-            name="insurance_cover"
-            value={form.insurance_cover}
-            onChange={handleChange}
-            disabled={clientId !== null}
-            className="w-full border border-white p-3 rounded text-teal-400 font-semibold italic disabled:opacity-60"
-          >
-            <option className="text-black" value="full">
-              Full Insurance
-            </option>
-            <option className="text-black" value="third_party">
-              Third Party
-            </option>
-          </select>
+          <div className="flex-1 h-px bg-white/[0.08]" />
 
-          <label className="block text-sm font-bold text-white">
-            Renewal Date
-          </label>
+          <div className="flex items-center gap-2">
+            <span
+              className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-mono border ${
+                clientId ? 'bg-[#E3A857]/15 border-[#E3A857]/40 text-[#E3A857]' : 'bg-white/[0.04] border-white/[0.1] text-[#565F76]'
+              }`}
+            >
+              2
+            </span>
+            <span className={`text-[13px] font-medium ${clientId ? 'text-[#F4F6FA]' : 'text-[#565F76]'}`}>
+              Quotes / Note
+            </span>
+          </div>
+        </motion.div>
 
-          <input
-            type="date"
-            name="renewal_date"
-            value={form.renewal_date}
-            onChange={handleChange}
-            disabled={clientId !== null}
-            className="w-full border border-white p-3 rounded text-yellow-600 font-semibold disabled:opacity-60"
-          />
+        {/* Client details card */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="rounded-2xl bg-[#0F1420] border border-white/[0.06] p-6 space-y-4"
+        >
+          <Field icon={<UserIcon />} label="Client Name">
+            <input
+              name="name"
+              placeholder="Full name"
+              value={form.name}
+              onChange={handleChange}
+              disabled={clientId !== null}
+              className={inputClass}
+            />
+          </Field>
 
-          <button
-            onClick={handleSubmit}
-            disabled={loading || clientId !== null}
-            className={`w-full py-3 rounded-xl font-semibold ${
-              loading || clientId
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 text-white'
-            }`}
-          >
-            {clientId ? 'Client Saved ✅' : loading ? 'Saving...' : 'Save Client'}
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field icon={<PhoneIcon />} label="Phone Number">
+              <input
+                name="mobile"
+                placeholder="10-digit mobile"
+                value={form.mobile}
+                onChange={handleChange}
+                disabled={clientId !== null}
+                className={inputClass}
+              />
+            </Field>
+
+            <Field icon={<PinIcon />} label="Place">
+              <input
+                name="place"
+                placeholder="City / town"
+                value={form.place}
+                onChange={handleChange}
+                disabled={clientId !== null}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+
+          <Field icon={<CarIcon />} label="Vehicle Type">
+            <input
+              name="vehicle_type"
+              placeholder="Eg: Car / Bike"
+              value={form.vehicle_type}
+              onChange={handleChange}
+              disabled={clientId !== null}
+              className={inputClass}
+            />
+          </Field>
+
+          <Field icon={<ShieldIcon />} label="Insurance Cover">
+            <select
+              name="insurance_cover"
+              value={form.insurance_cover}
+              onChange={handleChange}
+              disabled={clientId !== null}
+              className={inputClass}
+            >
+              <option className="bg-[#0A0E16]" value="full">Full Insurance</option>
+              <option className="bg-[#0A0E16]" value="third_party">Third Party</option>
+            </select>
+          </Field>
+
+          <Field icon={<CalendarIcon />} label="Renewal Date">
+            <input
+              type="date"
+              name="renewal_date"
+              value={form.renewal_date}
+              onChange={handleChange}
+              disabled={clientId !== null}
+              className={`${inputClass} [color-scheme:dark]`}
+            />
+          </Field>
+
+          {!clientId && (
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="w-full py-3.5 rounded-xl font-medium text-sm transition-colors bg-[#E3A857] hover:bg-[#d1963f] text-[#05070C] disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : 'Save Client'}
+            </button>
+          )}
 
           {clientId && (
-            <>
-              <div className="mt-6 border-t border-white/20 pt-5">
-                <h3 className="text-lg font-semibold mb-3 text-white">
-                  🧾 Add Quotes
-                </h3>
+            <div className="flex items-center gap-2 text-[#34D399] text-[13px] font-medium pt-1">
+              <CheckIcon /> Client saved
+            </div>
+          )}
+        </motion.div>
 
-                <input
-                  placeholder="Company Name"
-                  value={quote.company_name}
-                  onChange={(e) =>
-                    setQuote({ ...quote, company_name: e.target.value })
-                  }
-                  className="w-full border p-3 rounded mb-3 placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
-                />
+        {clientId && (
+          <>
+            {/* Quotes */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.06 }}
+              className="rounded-2xl bg-[#0F1420] border border-white/[0.06] p-6 mt-4"
+            >
+              <div className="flex items-center gap-2.5 mb-4">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#5B8DEF]/[0.12] text-[#5B8DEF]">
+                  <TagIcon />
+                </span>
+                <h3 className="text-[15px] font-medium text-[#F4F6FA]">Add Quotes</h3>
+              </div>
 
-                <input
-                  type="number"
-                  placeholder="Premium Amount"
-                  value={quote.premium_amount}
-                  onChange={(e) =>
-                    setQuote({ ...quote, premium_amount: e.target.value })
-                  }
-                  className="w-full border p-3 rounded mb-3 placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
-                />
+              <div className="space-y-3">
+                <Field icon={<TagIcon />} label="Company Name">
+                  <input
+                    placeholder="Insurer name"
+                    value={quote.company_name}
+                    onChange={(e) => setQuote({ ...quote, company_name: e.target.value })}
+                    className={inputClass}
+                  />
+                </Field>
+
+                <Field icon={<TagIcon />} label="Premium Amount">
+                  <input
+                    type="number"
+                    placeholder="Amount in ₹"
+                    value={quote.premium_amount}
+                    onChange={(e) => setQuote({ ...quote, premium_amount: e.target.value })}
+                    className={inputClass}
+                  />
+                </Field>
 
                 <button
                   onClick={handleAddQuote}
                   disabled={quoteLoading}
-                  className={`w-full py-2 rounded font-semibold ${
-                    quoteLoading ? 'bg-gray-400' : 'bg-blue-600 text-white'
-                  }`}
+                  className="w-full py-3 rounded-xl font-medium text-sm bg-[#5B8DEF]/10 hover:bg-[#5B8DEF]/20 text-[#5B8DEF] border border-[#5B8DEF]/30 transition-colors disabled:opacity-50"
                 >
-                  {quoteLoading ? 'Adding...' : '+ Add Quote'}
+                  {quoteLoading ? 'Adding...' : 'Add Quote'}
                 </button>
-
-                {quotes.length > 0 && (
-                  <div className="mt-4 space-y-3">
-                    {quotes.map((q) => (
-                      <div
-                        key={q.id}
-                        className="bg-gray-900 border border-gray-700 rounded-xl p-4 text-white"
-                      >
-                        {editingQuoteId === q.id ? (
-                          <div className="space-y-3">
-                            <input
-                              value={editQuote.company_name}
-                              onChange={(e) =>
-                                setEditQuote({
-                                  ...editQuote,
-                                  company_name: e.target.value,
-                                })
-                              }
-                              className="w-full bg-gray-800 border border-gray-700 p-2 rounded text-white"
-                              placeholder="Company Name"
-                            />
-
-                            <input
-                              type="number"
-                              value={editQuote.premium_amount}
-                              onChange={(e) =>
-                                setEditQuote({
-                                  ...editQuote,
-                                  premium_amount: e.target.value,
-                                })
-                              }
-                              className="w-full bg-gray-800 border border-gray-700 p-2 rounded text-white"
-                              placeholder="Premium Amount"
-                            />
-
-                            <div className="flex gap-2">
-                              <button
-                                onClick={handleSaveQuote}
-                                className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold"
-                              >
-                                Save
-                              </button>
-
-                              <button
-                                onClick={cancelEditQuote}
-                                className="bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex justify-between items-center gap-3">
-                            <div>
-                              <p className="font-semibold">{q.company_name}</p>
-                              <p className="text-gray-300">₹{q.premium_amount}</p>
-                            </div>
-
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => startEditQuote(q)}
-                                className="bg-yellow-500 text-black px-3 py-1.5 rounded-lg text-sm font-semibold"
-                              >
-                                Edit
-                              </button>
-
-                              <button
-                                onClick={() => handleDeleteQuote(q.id)}
-                                className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
-              <div className="mt-6 border-t border-white/20 pt-5">
-                <h3 className="text-lg font-semibold mb-3 text-white">
-                  Add Follow-up Note
-                </h3>
+              {quotes.length > 0 && (
+                <div className="mt-4 space-y-2.5">
+                  {quotes.map((q) => (
+                    <div key={q.id} className="bg-[#0A0E16] border border-white/[0.08] rounded-xl p-4">
+                      {editingQuoteId === q.id ? (
+                        <div className="space-y-3">
+                          <input
+                            value={editQuote.company_name}
+                            onChange={(e) => setEditQuote({ ...editQuote, company_name: e.target.value })}
+                            className={inputClass}
+                            placeholder="Company Name"
+                          />
+                          <input
+                            type="number"
+                            value={editQuote.premium_amount}
+                            onChange={(e) => setEditQuote({ ...editQuote, premium_amount: e.target.value })}
+                            className={inputClass}
+                            placeholder="Premium Amount"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={handleSaveQuote}
+                              className="bg-[#34D399]/10 hover:bg-[#34D399]/20 text-[#34D399] border border-[#34D399]/30 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={cancelEditQuote}
+                              className="bg-white/[0.04] hover:bg-white/[0.08] text-[#7C879E] px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between items-center gap-3">
+                          <div>
+                            <p className="font-medium text-[14px] text-[#F4F6FA]">{q.company_name}</p>
+                            <p className="text-[#7C879E] text-[13px] font-mono">₹{q.premium_amount}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => startEditQuote(q)}
+                              className="flex items-center gap-1.5 bg-[#E3A857]/10 hover:bg-[#E3A857]/20 text-[#E3A857] border border-[#E3A857]/30 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors"
+                            >
+                              <PencilIcon /> Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteQuote(q.id)}
+                              className="flex items-center gap-1.5 bg-[#EF6461]/10 hover:bg-[#EF6461]/20 text-[#EF6461] border border-[#EF6461]/30 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors"
+                            >
+                              <TrashIcon /> Delete
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
 
+            {/* Follow-up note */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.12 }}
+              className="rounded-2xl bg-[#0F1420] border border-white/[0.06] p-6 mt-4 space-y-4"
+            >
+              <h3 className="text-[15px] font-medium text-[#F4F6FA]">Add Follow-up Note</h3>
+
+              <Field icon={<NoteIcon />} label="Note">
                 <textarea
                   placeholder="Note details..."
                   value={note.text}
                   onChange={(e) => setNote({ ...note, text: e.target.value })}
-                  className="w-full border p-3 rounded mb-3 placeholder:text-yellow-600 font-semibold italic text-yellow-600 font-sans"
+                  rows={3}
+                  className={`${inputClass} resize-none`}
                 />
+              </Field>
 
+              <Field icon={<CalendarIcon />} label="Follow-up Date">
                 <input
                   type="date"
                   value={note.follow_up_date}
-                  onChange={(e) =>
-                    setNote({ ...note, follow_up_date: e.target.value })
-                  }
-                  className="w-full border p-3 rounded mb-3 text-yellow-600 font-semibold"
+                  onChange={(e) => setNote({ ...note, follow_up_date: e.target.value })}
+                  className={`${inputClass} [color-scheme:dark]`}
                 />
+              </Field>
 
-                <label className="flex items-center gap-2 mb-3 text-teal-400 font-semibold">
-                  <input
-                    type="checkbox"
-                    checked={note.reminder}
-                    onChange={(e) =>
-                      setNote({ ...note, reminder: e.target.checked })
-                    }
-                  />
-                  Reminder
-                </label>
+              <label className="flex items-center gap-3 bg-[#0A0E16] border border-white/[0.08] rounded-xl px-3.5 py-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={note.reminder}
+                  onChange={(e) => setNote({ ...note, reminder: e.target.checked })}
+                  className="w-4 h-4 accent-[#E3A857]"
+                />
+                <span className="flex items-center gap-2">
+                  <span className="text-[#7C879E]">
+                    <BellIcon />
+                  </span>
+                  <span className="text-[13px] font-medium text-[#F4F6FA]">Enable Reminder</span>
+                </span>
+              </label>
 
-                <div className="bg-indigo-900 border border-white/20 rounded-xl p-4 mb-4">
-                  <p className="text-white font-semibold mb-3">
-                    Lead Priority
-                  </p>
+              <div>
+                <p className="text-[13px] font-medium text-[#F4F6FA] mb-2.5">Lead Priority</p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {[
-                      {
-                        value: 'HOT',
-                        label: '🔥 HOT',
-                        active: 'bg-red-600 text-white border-red-400',
-                      },
-                      {
-                        value: 'WARM',
-                        label: '🌤 WARM',
-                        active: 'bg-yellow-500 text-black border-yellow-300',
-                      },
-                      {
-                        value: 'COOL',
-                        label: '❄ COOL',
-                        active: 'bg-blue-600 text-white border-blue-400',
-                      },
-                    ].map((item) => (
+                <div className="grid grid-cols-3 gap-2.5">
+                  {priorityOptions.map((item) => {
+                    const active = note.priority === item.value;
+                    return (
                       <button
                         key={item.value}
                         type="button"
-                        onClick={() =>
-                          setNote({ ...note, priority: item.value })
-                        }
-                        className={`rounded-xl border px-4 py-3 font-semibold transition ${
-                          note.priority === item.value
-                            ? item.active
-                            : 'bg-gray-900 text-gray-300 border-gray-700 hover:bg-gray-800'
-                        }`}
+                        onClick={() => setNote({ ...note, priority: item.value })}
+                        className="relative rounded-lg p-[1px] overflow-hidden"
                       >
-                        {item.label}
+                        {active && (
+                          <div
+                            className="absolute -inset-[40%] opacity-90"
+                            style={{
+                              background: `conic-gradient(from 0deg, transparent 0%, ${item.color} 16%, transparent 32%)`,
+                              animation: 'card-glow-spin 3.2s linear infinite',
+                            }}
+                          />
+                        )}
+                        <div
+                          className={`relative z-10 rounded-[7px] px-3 py-2.5 border flex items-center justify-center gap-2 transition-colors ${
+                            active ? 'bg-[#0F1420] border-white/[0.02]' : 'bg-[#0F1420] border-white/[0.08] hover:border-white/[0.16]'
+                          }`}
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full" style={{ background: item.color }} />
+                          <span className="text-[13px] font-medium" style={{ color: active ? item.color : '#7C879E' }}>
+                            {item.label}
+                          </span>
+                        </div>
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
-
-                <button
-                  onClick={handleAddNote}
-                  disabled={noteLoading}
-                  className={`w-full py-2 rounded font-semibold ${
-                    noteLoading ? 'bg-gray-400' : 'bg-green-600 text-white'
-                  }`}
-                >
-                  {noteLoading ? 'Saving...' : '+ Add Note & Finish'}
-                </button>
-
-                <button
-                  onClick={finishWithoutNote}
-                  className="w-full mt-3 py-2 rounded font-semibold bg-gray-700 text-white"
-                >
-                  Finish Without Note
-                </button>
               </div>
-            </>
-          )}
-        </div>
+
+              <button
+                onClick={handleAddNote}
+                disabled={noteLoading}
+                className="w-full py-3.5 rounded-xl font-medium text-sm bg-[#E3A857] hover:bg-[#d1963f] text-[#05070C] disabled:opacity-50 transition-colors"
+              >
+                {noteLoading ? 'Saving...' : 'Add Note & Finish'}
+              </button>
+
+              <button
+                onClick={finishWithoutNote}
+                className="w-full py-3 rounded-xl font-medium text-sm bg-white/[0.04] hover:bg-white/[0.08] text-[#7C879E] transition-colors"
+              >
+                Finish Without Note
+              </button>
+            </motion.div>
+          </>
+        )}
       </div>
     </div>
   );
