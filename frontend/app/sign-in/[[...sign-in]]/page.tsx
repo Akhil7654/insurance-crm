@@ -5,13 +5,13 @@ import { motion } from "framer-motion";
 
 export default function SignInPage() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-gray-50">
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="min-h-[45vh] lg:min-h-screen bg-gradient-to-br from-black to-gray-800 text-white px-6 py-10 sm:px-10 lg:px-14 lg:py-16 flex flex-col justify-center"
+          className="bg-gradient-to-br from-black to-gray-800 text-white px-6 py-10 sm:px-10 lg:px-14 lg:py-16 flex flex-col justify-center"
         >
           <div className="max-w-xl mx-auto lg:mx-0">
             <p className="text-sm uppercase tracking-widest text-gray-400 mb-4">
@@ -39,7 +39,7 @@ export default function SignInPage() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.15 }}
-          className="min-h-[55vh] lg:min-h-screen bg-white flex items-center justify-center px-4 py-8 sm:px-6 lg:px-10"
+          className="flex items-center justify-center px-4 py-8 sm:px-6 lg:px-10"
         >
           <div className="w-full max-w-[420px]">
             <SignIn
