@@ -80,12 +80,15 @@ export default function InvestmentClientHistoryPage() {
     try {
       setLoading(true);
 
-      const newNote = await createNote({
+      await createNote({
         client: clientId,
         ...note,
       });
 
-      setHistory((prev) => [newNote, ...prev]);
+      // refetch instead of splicing — so reminder toggles on other
+      // notes (turned off server-side) are reflected immediately
+      const refreshed = await getClientHistory(clientId);
+      setHistory(refreshed);
 
       setNote({
         text: '',
@@ -104,8 +107,10 @@ export default function InvestmentClientHistoryPage() {
     reminder: boolean,
     priority: 'HOT' | 'WARM' | 'COOL'
   ) => {
-    const updated = await updateNote(noteObj.id, { text, reminder, priority });
-    setHistory((prev) => prev.map((n) => (n.id === noteObj.id ? updated : n)));
+    await updateNote(noteObj.id, { text, reminder, priority });
+
+    const refreshed = await getClientHistory(clientId);
+    setHistory(refreshed);
   };
 
   const handleNoteDelete = async (noteObj: any) => {
