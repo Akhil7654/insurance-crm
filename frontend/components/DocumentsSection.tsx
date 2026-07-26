@@ -158,22 +158,22 @@ export default function DocumentsSection({ clientId }: { clientId: number }) {
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  
-                    href={fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#5B8DEF] hover:text-[#7ba3f5] text-[13px] font-medium transition-colors"
-                  >
-                    View
-                  </a>
+  <a
+    href={fileUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-[#5B8DEF] hover:text-[#7ba3f5] text-[13px] font-medium transition-colors"
+  >
+    View
+  </a>
 
-                  <button
-                    onClick={() => handleDelete(doc.id)}
-                    className="text-[#EF6461] hover:text-[#f18178] transition-colors"
-                  >
-                    <TrashIcon />
-                  </button>
-                </div>
+  <button
+    onClick={() => handleDelete(doc.id)}
+    className="text-[#EF6461] hover:text-[#f18178] transition-colors"
+  >
+    <TrashIcon />
+  </button>
+</div>
               </div>
             );
           })}
