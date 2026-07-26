@@ -99,7 +99,7 @@ function BentoCard({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: 'spring', stiffness: 120, damping: 16, delay: 0.9 + index * 0.09 }}
       onClick={onOpen}
-      className={`group relative text-left rounded-2xl p-[1px] overflow-hidden ${wide ? 'col-span-full' : ''}`}
+      className={`group relative text-left rounded-2xl p-[1px] overflow-hidden cursor-pointer ${wide ? 'col-span-full' : ''}`}
     >
       {/* rotating gradient glow — visible only on hover */}
       <div
