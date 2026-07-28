@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 const SCROLL_KEY = 'reminders-scroll-pos';
+const CACHE_KEY = 'reminders-notes-cache';
 
 /* ------------------------------------------------------- */
 /* CONFIG */
@@ -122,6 +123,15 @@ async function fetchJSON(url: string, options?: RequestInit) {
   return text ? JSON.parse(text) : null;
 }
 
+function readCache<T>(key: string): T | null {
+  try {
+    const raw = sessionStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
 /* ------------------------------------------------------- */
 /* SKELETON */
 /* ------------------------------------------------------- */
@@ -148,7 +158,13 @@ export default function ReminderDashboardClient() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // ✅ Initialize from URL so back-navigation restores the exact tab
+  // ✅ Was there a saved scroll position waiting for us? If so, this is a
+  // "return visit" (back-nav from a client page) — we treat first paint
+  // differently: no skeleton flash, no replayed entrance stagger.
+  const isReturning = useRef(
+    typeof window !== 'undefined' && sessionStorage.getItem(SCROLL_KEY) !== null
+  ).current;
+
   const [selectedInsurance, setSelectedInsuranceState] = useState<InsuranceType>(
     isInsuranceType(searchParams.get('type')) ? (searchParams.get('type') as InsuranceType) : 'vehicle'
   );
@@ -156,17 +172,17 @@ export default function ReminderDashboardClient() {
     isPriorityType(searchParams.get('priority')) ? (searchParams.get('priority') as PriorityType) : 'HOT'
   );
 
-  const [notes, setNotes] = useState<any[]>([]);
+  // ✅ Seed notes from cache synchronously on return visits, so the very
+  // first render already has real content — no empty → skeleton → content flash.
+  const [notes, setNotes] = useState<any[]>(() =>
+    isReturning ? readCache<any[]>(CACHE_KEY) || [] : []
+  );
   const [hideOverdue, setHideOverdue] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isReturning || notes.length === 0);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ Tracks whether we've already tried restoring scroll for this mount,
-  // so we don't re-apply it every time `loading` flips (e.g. after delete/retry).
-  const hasRestoredScroll = useRef(false);
+  const scrollRestored = useRef(false);
 
-  // ✅ Keep the URL in sync whenever the tabs change, so it can be
-  // restored on back/forward navigation without a page reload.
   const updateUrl = (nextType: InsuranceType, nextPriority: PriorityType) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('type', nextType);
@@ -184,8 +200,6 @@ export default function ReminderDashboardClient() {
     updateUrl(selectedInsurance, priority);
   };
 
-  // If the user lands here with no query params at all (fresh visit),
-  // write the defaults into the URL so the very first back-nav still works.
   useEffect(() => {
     if (!searchParams.get('type') || !searchParams.get('priority')) {
       updateUrl(selectedInsurance, selectedPriority);
@@ -193,11 +207,10 @@ export default function ReminderDashboardClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ Save scroll position right before leaving for a client's page,
-  // so we can restore it exactly when the user hits back.
   const routeToClient = (n: any) => {
     try {
       sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(notes));
     } catch {
       // sessionStorage can fail in some private-browsing contexts — safe to ignore
     }
@@ -206,10 +219,10 @@ export default function ReminderDashboardClient() {
     router.push(`/${type}/client/${n.client}`);
   };
 
-  const load = async () => {
+  const load = async (silent = false) => {
     try {
       setError(null);
-      setLoading(true);
+      if (!silent) setLoading(true);
 
       const [today, overdue, upcoming] = await Promise.all([
         fetchJSON(`${API}/notes/today/`),
@@ -229,22 +242,29 @@ export default function ReminderDashboardClient() {
 
       setNotes(combined);
     } catch {
-      setError('Failed to load reminders');
-      setNotes([]);
+      if (!silent) {
+        setError('Failed to load reminders');
+        setNotes([]);
+      }
+      // on a silent background refresh, keep showing cached notes on failure
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    load();
+    // ✅ On a return visit we already have cached notes to show instantly —
+    // still refresh in the background, but don't show the skeleton for it.
+    load(isReturning && notes.length > 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ Restore scroll position once the list has actually rendered,
-  // not on every future re-render (delete/retry shouldn't jump the page).
-  useEffect(() => {
-    if (loading || hasRestoredScroll.current) return;
-    hasRestoredScroll.current = true;
+  // ✅ useLayoutEffect runs synchronously before the browser paints, so the
+  // scroll position is already correct in the very first frame the user
+  // sees — nothing visibly jumps or snaps into place.
+  useLayoutEffect(() => {
+    if (loading || scrollRestored.current) return;
+    scrollRestored.current = true;
 
     let saved: string | null = null;
     try {
@@ -253,20 +273,15 @@ export default function ReminderDashboardClient() {
       saved = null;
     }
 
-    if (!saved) return;
-
-    // Wait a tick for layout/animations to settle before scrolling,
-    // otherwise we scroll before the cards have taken their final height.
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: parseInt(saved as string, 10), behavior: 'auto' });
-        try {
-          sessionStorage.removeItem(SCROLL_KEY);
-        } catch {
-          // ignore
-        }
-      });
-    });
+    if (saved) {
+      window.scrollTo({ top: parseInt(saved, 10), behavior: 'auto' });
+      try {
+        sessionStorage.removeItem(SCROLL_KEY);
+        sessionStorage.removeItem(CACHE_KEY);
+      } catch {
+        // ignore
+      }
+    }
   }, [loading]);
 
   const handleDelete = async (e: React.MouseEvent, id: number) => {
@@ -316,6 +331,14 @@ export default function ReminderDashboardClient() {
     [notes]
   );
 
+  // ✅ Entrance timings collapse to near-zero on a return visit — content
+  // is already there, it just needs a very quick, gentle settle rather
+  // than replaying the full "page just loaded" choreography.
+  const enter = (delay: number) =>
+    isReturning
+      ? { transition: { duration: 0.18 } }
+      : { transition: { duration: 0.4, delay } };
+
   const renderCard = (n: any, i: number) => {
     const status = statusMeta(n.status);
     const priority = priorityMeta(n.priority || 'HOT');
@@ -324,10 +347,10 @@ export default function ReminderDashboardClient() {
     return (
       <motion.div
         key={n.id}
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: isReturning ? 4 : 16 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        transition={{ delay: i * 0.04, duration: 0.3 }}
+        transition={{ delay: isReturning ? 0 : i * 0.04, duration: isReturning ? 0.18 : 0.3 }}
         onClick={() => routeToClient(n)}
         className="group relative rounded-2xl p-[1px] overflow-hidden cursor-pointer"
       >
@@ -433,7 +456,12 @@ export default function ReminderDashboardClient() {
 
       <div className="relative mx-auto w-full max-w-4xl px-6 py-14 sm:py-20">
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-10">
+        <motion.div
+          initial={{ opacity: 0, y: isReturning ? 0 : -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          {...enter(0)}
+          className="mb-10"
+        >
           <p className="font-mono text-[11px] tracking-[0.18em] text-[#E3A857] uppercase mb-3">
             Reminder Dashboard
           </p>
@@ -446,9 +474,9 @@ export default function ReminderDashboardClient() {
         {/* Insurance segmented control */}
         <LayoutGroup>
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: isReturning ? 0 : 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            {...enter(0.1)}
             className="mb-6 rounded-2xl bg-[#0F1420] border border-white/[0.06] p-1.5"
           >
             <div className="grid grid-cols-3 gap-1.5">
@@ -498,9 +526,9 @@ export default function ReminderDashboardClient() {
 
         {/* Priority stat tiles */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: isReturning ? 0 : 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.16 }}
+          {...enter(0.16)}
           className="grid grid-cols-3 gap-3 mb-10"
         >
           {priorityTabs.map((tab) => {
@@ -552,7 +580,7 @@ export default function ReminderDashboardClient() {
           <div className="bg-[#0F1420] border border-white/[0.06] rounded-2xl p-6 text-center">
             <p className="text-[#EF6461] font-medium text-sm">{error}</p>
             <button
-              onClick={load}
+              onClick={() => load(false)}
               className="mt-4 bg-[#5B8DEF] text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-[#4a7ce0] transition-colors"
             >
               Retry
@@ -562,10 +590,10 @@ export default function ReminderDashboardClient() {
           <AnimatePresence mode="wait">
             <motion.div
               key={`${selectedInsurance}-${selectedPriority}`}
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: isReturning ? 0 : 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: isReturning ? 0.15 : 0.2 }}
             >
               {overdueNotes.length > 0 && (
                 <div className="mb-6">
