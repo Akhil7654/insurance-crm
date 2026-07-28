@@ -9,7 +9,7 @@ import {
 } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import InvestmentConvertModal from '@/components/InvestmentConvertModal';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
 function toYYYYMM(d: Date) {
   const y = d.getFullYear();
@@ -66,6 +66,45 @@ const TrashIcon = () => (
     <path d="M5 7h14M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13" />
   </svg>
 );
+
+const UsersIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <circle cx="9" cy="8" r="2.8" />
+    <path d="M3 19c0-3 2.7-5 6-5s6 2 6 5" />
+    <circle cx="17" cy="9" r="2.2" />
+    <path d="M14.5 14.2c2-.1 4 1.6 4.3 4.3" />
+  </svg>
+);
+
+const TrophyIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+    <path d="M8 4h8v4a4 4 0 0 1-8 0V4Z" />
+    <path d="M8 5H5.5a1.5 1.5 0 0 0 0 3.5A4.5 4.5 0 0 0 8 12M16 5h2.5a1.5 1.5 0 0 1 0 3.5A4.5 4.5 0 0 1 16 12" />
+    <path d="M12 12v3M9 19h6M10 19v-3.5M14 19v-3.5" />
+  </svg>
+);
+
+/* ------------------------------------------------------- */
+/* ANIMATED COUNTER */
+/* ------------------------------------------------------- */
+
+function AnimatedNumber({ value }: { value: number }) {
+  const motionVal = useMotionValue(0);
+  const spring = useSpring(motionVal, { stiffness: 90, damping: 20, mass: 0.6 });
+  const rounded = useTransform(spring, (v) => Math.round(v).toLocaleString());
+  const [display, setDisplay] = useState('0');
+
+  useEffect(() => {
+    motionVal.set(value);
+  }, [value, motionVal]);
+
+  useEffect(() => {
+    const unsub = rounded.on('change', (v) => setDisplay(v));
+    return () => unsub();
+  }, [rounded]);
+
+  return <>{display}</>;
+}
 
 /* ------------------------------------------------------- */
 /* SKELETONS */
@@ -163,6 +202,11 @@ export default function InvestmentClientsPage() {
     );
   }, [clients, search]);
 
+  const convertedCount = useMemo(
+    () => clients.filter((c: any) => c.is_converted).length,
+    [clients]
+  );
+
   const openRenewalList = (status: 'pending' | 'missed') => {
     router.push(`/investment/renewals?month=${month}&status=${status}`);
   };
@@ -229,7 +273,7 @@ export default function InvestmentClientsPage() {
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="flex items-center justify-between mb-8"
+          className="flex items-center justify-between mb-6"
         >
           <div>
             <p className="font-mono text-[11px] tracking-[0.18em] text-[#5B8DEF] uppercase mb-3">
@@ -246,8 +290,82 @@ export default function InvestmentClientsPage() {
           </button>
         </motion.div>
 
+        {/* Client count hero stat */}
+        <motion.div
+          initial={{ opacity: 0, y: 10, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.45, delay: 0.04 }}
+          className="relative rounded-2xl p-[1px] overflow-hidden mb-6"
+        >
+          <div
+            className="absolute -inset-[40%] opacity-70 pointer-events-none"
+            style={{
+              background: 'conic-gradient(from 0deg, transparent 0%, #5B8DEF 10%, transparent 22%, transparent 50%, #34D399 60%, transparent 72%)',
+              animation: 'card-glow-spin 5s linear infinite',
+            }}
+          />
+
+          <div className="relative z-10 bg-[#0F1420] border border-white/[0.06] rounded-[15px] px-6 py-5">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-4">
+                <motion.span
+                  initial={{ scale: 0.6, opacity: 0, rotate: -12 }}
+                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                  transition={{ type: 'spring', stiffness: 260, damping: 16, delay: 0.15 }}
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#5B8DEF]/[0.14] text-[#5B8DEF]"
+                >
+                  <UsersIcon />
+                </motion.span>
+
+                <div>
+                  <p className="text-[12px] font-medium text-[#7C879E] uppercase tracking-wide">
+                    Total Clients
+                  </p>
+                  <div className="flex items-baseline gap-1">
+                    {loadingClients ? (
+                      <span className="inline-block h-8 w-14 bg-white/[0.06] rounded animate-pulse mt-1" />
+                    ) : (
+                      <motion.span
+                        key="count"
+                        className="font-mono text-3xl font-semibold text-[#F4F6FA] tabular-nums"
+                      >
+                        <AnimatedNumber value={clients.length} />
+                      </motion.span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {!loadingClients && clients.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex items-center gap-2 bg-[#34D399]/10 border border-[#34D399]/30 text-[#34D399] px-3 py-2 rounded-xl text-[12px] font-medium"
+                >
+                  <TrophyIcon />
+                  <span className="font-mono">
+                    <AnimatedNumber value={convertedCount} />
+                  </span>
+                  Converted
+                </motion.div>
+              )}
+            </div>
+
+            {search.trim() && !loadingClients && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-[12px] text-[#565F76] mt-3 font-mono"
+              >
+                Showing {filteredClients.length} of {clients.length} matching "{search.trim()}"
+              </motion.p>
+            )}
+          </div>
+        </motion.div>
+
         {/* Search */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }} className="mb-6">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="mb-6">
           <div className="flex items-center gap-2.5 bg-[#0F1420] border border-white/[0.06] focus-within:border-[#5B8DEF]/50 rounded-xl px-4 py-3 transition-colors">
             <span className="text-[#565F76]">
               <SearchIcon />
@@ -266,7 +384,7 @@ export default function InvestmentClientsPage() {
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.12 }}
           className="bg-[#0F1420] border border-white/[0.06] rounded-2xl p-5 mb-8"
         >
           <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
