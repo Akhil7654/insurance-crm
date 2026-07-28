@@ -6,6 +6,7 @@ from .views import (
     HealthInsuranceViewSet,
     InvestmentDetailsViewSet,           
     QuoteViewSet,
+    EMIDetailsViewSet,
     NoteViewSet,
     DocumentViewSet,
     delete_document,
@@ -31,6 +32,7 @@ router.register('vehicle-insurance', VehicleInsuranceViewSet)
 router.register('health-insurance', HealthInsuranceViewSet)
 router.register('investment-details', InvestmentDetailsViewSet)  
 router.register('quotes', QuoteViewSet)
+router.register('emi-details', EMIDetailsViewSet)
 router.register('notes', NoteViewSet)
 router.register('documents', DocumentViewSet)
 

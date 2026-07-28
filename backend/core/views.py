@@ -14,6 +14,7 @@ from .models import (
     VehicleInsurance,
     HealthInsurance,
     Quote,
+    EMIDetails,
     Note,
     Document,
     LeadConversion,
@@ -25,6 +26,7 @@ from .serializers import (
     VehicleInsuranceSerializer,
     HealthInsuranceSerializer,
     QuoteSerializer,
+    EMIDetailsSerializer,
     NoteSerializer,
     DocumentSerializer,
     ClientDetailSerializer,
@@ -599,3 +601,15 @@ def investment_set_renewal_date(request, client_id):
     inv.save()
 
     return Response({"success": True, "client_id": client_id, "renewal_date": str(parsed)})
+
+
+class EMIDetailsViewSet(viewsets.ModelViewSet):
+    queryset = EMIDetails.objects.all()
+    serializer_class = EMIDetailsSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        client_id = self.request.query_params.get("client")
+        if client_id:
+            qs = qs.filter(client_id=client_id)
+        return qs

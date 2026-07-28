@@ -17,7 +17,7 @@ class Client(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.insurance_type}"
-    
+
 
 class InvestmentDetails(models.Model):
     client = models.OneToOneField(
@@ -86,7 +86,9 @@ class VehicleInsurance(models.Model):
 
     renewal_date = models.DateField(null=True, blank=True)
 
-    # ✅ EMI fields
+    # ⚠️ Legacy single-EMI fields — kept for backward compatibility with
+    # existing data, but the UI now uses the EMIDetails model below
+    # (supports multiple EMIs per client with a provider field).
     down_payment = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, default=0)
     policy_tenure = models.CharField(max_length=100, blank=True, default='')
     emi_tenure = models.CharField(max_length=100, blank=True, default='')
@@ -115,7 +117,9 @@ class HealthInsurance(models.Model):
     renewal_date = models.DateField(null=True, blank=True)
     renewal_dismissed = models.BooleanField(default=False)
 
-    # ✅ EMI fields
+    # ⚠️ Legacy single-EMI fields — kept for backward compatibility with
+    # existing data, but the UI now uses the EMIDetails model below
+    # (supports multiple EMIs per client with a provider field).
     down_payment = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, default=0)
     policy_tenure = models.CharField(max_length=100, blank=True, default='')
     emi_tenure = models.CharField(max_length=100, blank=True, default='')
@@ -123,6 +127,33 @@ class HealthInsurance(models.Model):
 
     def __str__(self):
         return f"{self.client.name} - Health ({self.floater_type})"
+
+
+class EMIDetails(models.Model):
+    """
+    Multiple EMI plans per client (e.g. a client may have taken more
+    than one loan/provider for their policy premium). Works for both
+    vehicle and health clients since it's keyed off Client directly.
+    """
+    client = models.ForeignKey(
+        Client,
+        on_delete=models.CASCADE,
+        related_name='emi_details'
+    )
+
+    emi_provider = models.CharField(max_length=200, blank=True, default='')
+    down_payment = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, default=0)
+    policy_tenure = models.CharField(max_length=100, blank=True, default='')
+    emi_tenure = models.CharField(max_length=100, blank=True, default='')
+    monthly_emi_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.client.name} - EMI ({self.emi_provider or 'Unnamed'})"
 
 
 class Quote(models.Model):

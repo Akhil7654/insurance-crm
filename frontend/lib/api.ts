@@ -308,3 +308,33 @@ export async function setInvestmentRenewalDate(clientId: number, renewalDate: st
   if (!res.ok) throw new Error('Failed to set investment renewal date');
   return res.json();
 }
+
+
+// ---------------- EMI DETAILS (multiple per client) ----------------
+export async function createEmiDetails(data: any) {
+  const res = await fetch(`${API_BASE}/emi-details/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to create EMI details');
+  return res.json();
+}
+
+export async function updateEmiDetails(id: number, data: any) {
+  const res = await fetch(`${API_BASE}/emi-details/${id}/`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update EMI details');
+  return res.json();
+}
+
+export async function deleteEmiDetails(id: number) {
+  const res = await fetch(`${API_BASE}/emi-details/${id}/`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to delete EMI details');
+  return true;
+}

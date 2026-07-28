@@ -9,8 +9,10 @@ from .models import (
     Quote,
     Note,
     Document,
-    LeadConversion
+    LeadConversion,
+    EMIDetails,
 )
+
 
 
 class VehicleInsuranceSerializer(serializers.ModelSerializer):
@@ -88,12 +90,19 @@ class LeadConversionSerializer(serializers.ModelSerializer):
         model = LeadConversion
         fields = "__all__"
 
+class EMIDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EMIDetails
+        fields = '__all__'
+
+
 
 class ClientDetailSerializer(serializers.ModelSerializer):
     vehicle_details = VehicleInsuranceSerializer(read_only=True)
     health_details = HealthInsuranceSerializer(read_only=True)
     investment_details = InvestmentDetailsSerializer(read_only=True)                    
     quotes = QuoteSerializer(many=True, read_only=True)
+    emi_details = EMIDetailsSerializer(many=True, read_only=True)
     notes = NoteSerializer(many=True, read_only=True)
     documents = DocumentSerializer(many=True, read_only=True)
     conversions = LeadConversionSerializer(many=True, read_only=True)
@@ -103,6 +112,8 @@ class ClientDetailSerializer(serializers.ModelSerializer):
         model = Client
         fields = [
             'id', 'name', 'mobile', 'place', 'insurance_type', 'created_at', 'is_converted',
-            'vehicle_details', 'health_details', 'investment_details',
+            'vehicle_details', 'health_details', 'investment_details','emi_details',
             'quotes', 'notes', 'documents', 'conversions', 'investment_conversions',
         ]
+
+
