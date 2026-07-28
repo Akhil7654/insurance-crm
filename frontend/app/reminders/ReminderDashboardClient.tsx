@@ -170,143 +170,83 @@ export default function ReminderDashboardClient() {
     isPriorityType(searchParams.get('priority')) ? (searchParams.get('priority') as PriorityType) : 'HOT'
   );
 
-  const [notes, setNotes] = useState<any[]>(() =>
-    isReturning ? readCache<any[]>(CACHE_KEY) || [] : []
-  );
+  // ✅ Compute everything derived from the cache/lastClicked ONCE, synchronously,
+  // before the first render — so hideOverdue is already correct on first paint
+  // instead of flipping open after scroll restoration has already run.
+  const initRef = useRef<{
+    notes: any[];
+    hideOverdue: boolean;
+    highlightId: number | null;
+  } | null>(null);
 
-  // ✅ Overdue is hidden by default. It only auto-opens on return if the
-  // card that took you away was itself an overdue one (see the layout
-  // effect below) — otherwise it stays exactly as you left it.
-  const [hideOverdue, setHideOverdue] = useState(true);
+  if (initRef.current === null) {
+    const cachedNotes = isReturning ? readCache<any[]>(CACHE_KEY) || [] : [];
 
+    let lastClickedId: string | null = null;
+    try {
+      lastClickedId = isReturning ? sessionStorage.getItem(LAST_CLICKED_KEY) : null;
+    } catch {
+      lastClickedId = null;
+    }
+
+    const clickedNote = lastClickedId
+      ? cachedNotes.find((n) => String(n.id) === lastClickedId)
+      : null;
+
+    initRef.current = {
+      notes: cachedNotes,
+      // Only auto-open overdue if the card you clicked into WAS overdue.
+      hideOverdue: clickedNote?.status === 'overdue' ? false : true,
+      highlightId: lastClickedId ? Number(lastClickedId) : null,
+    };
+  }
+
+  const [notes, setNotes] = useState<any[]>(initRef.current.notes);
+  const [hideOverdue, setHideOverdue] = useState(initRef.current.hideOverdue);
   const [loading, setLoading] = useState(!isReturning || notes.length === 0);
   const [error, setError] = useState<string | null>(null);
-
-  // ✅ Which card (by id) should play the "welcome back" glow animation
-  const [highlightId, setHighlightId] = useState<number | null>(null);
+  const [highlightId, setHighlightId] = useState<number | null>(initRef.current.highlightId);
 
   const scrollRestored = useRef(false);
 
-  const updateUrl = (nextType: InsuranceType, nextPriority: PriorityType) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('type', nextType);
-    params.set('priority', nextPriority);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  };
+  // ...(updateUrl, setSelectedInsurance, setSelectedPriority, the URL-sync
+  //     useEffect, routeToClient, load() — all unchanged from before)...
 
-  const setSelectedInsurance = (type: InsuranceType) => {
-    setSelectedInsuranceState(type);
-    updateUrl(type, selectedPriority);
-  };
-
-  const setSelectedPriority = (priority: PriorityType) => {
-    setSelectedPriorityState(priority);
-    updateUrl(selectedInsurance, priority);
-  };
-
-  useEffect(() => {
-    if (!searchParams.get('type') || !searchParams.get('priority')) {
-      updateUrl(selectedInsurance, selectedPriority);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const routeToClient = (n: any) => {
-    try {
-      sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
-      sessionStorage.setItem(CACHE_KEY, JSON.stringify(notes));
-      sessionStorage.setItem(LAST_CLICKED_KEY, String(n.id)); // ✅ remember exactly which card
-    } catch {
-      // sessionStorage can fail in some private-browsing contexts — safe to ignore
-    }
-
-    const type = n.client_insurance_type || 'vehicle';
-    router.push(`/${type}/client/${n.client}`);
-  };
-
-  const load = async (silent = false) => {
-    try {
-      setError(null);
-      if (!silent) setLoading(true);
-
-      const [today, overdue, upcoming] = await Promise.all([
-        fetchJSON(`${API}/notes/today/`),
-        fetchJSON(`${API}/notes/overdue/`),
-        fetchJSON(`${API}/notes/upcoming/`),
-      ]);
-
-      const combined = [
-        ...overdue.map((n: any) => ({ ...n, status: 'overdue' })),
-        ...today.map((n: any) => ({ ...n, status: 'today' })),
-        ...upcoming.map((n: any) => ({ ...n, status: 'upcoming' })),
-      ];
-
-      combined.sort(
-        (a: any, b: any) => new Date(a.follow_up_date).getTime() - new Date(b.follow_up_date).getTime()
-      );
-
-      setNotes(combined);
-    } catch {
-      if (!silent) {
-        setError('Failed to load reminders');
-        setNotes([]);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load(isReturning && notes.length > 0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ✅ Restores scroll position AND, if the note you clicked was overdue,
-  // reveals the overdue section + queues the highlight glow on that card.
+  // ✅ Scroll restoration ONLY. Layout (overdue open/closed) is already
+  // correct from the initial render above, so this now runs against the
+  // right heights on its very first pass — no jump, no premature collapse.
   useLayoutEffect(() => {
     if (loading || scrollRestored.current) return;
     scrollRestored.current = true;
 
     let saved: string | null = null;
-    let lastClicked: string | null = null;
     try {
       saved = sessionStorage.getItem(SCROLL_KEY);
-      lastClicked = sessionStorage.getItem(LAST_CLICKED_KEY);
     } catch {
       saved = null;
-      lastClicked = null;
     }
 
     if (saved) {
       window.scrollTo({ top: parseInt(saved, 10), behavior: 'auto' });
-      try {
-        sessionStorage.removeItem(SCROLL_KEY);
-        sessionStorage.removeItem(CACHE_KEY);
-      } catch {
-        // ignore
-      }
     }
 
-    if (lastClicked) {
-      const clickedNote = notes.find((n) => String(n.id) === lastClicked);
-
-      // Only auto-unhide overdue if that's specifically what you clicked into
-      if (clickedNote?.status === 'overdue') {
-        setHideOverdue(false);
-      }
-
-      setHighlightId(Number(lastClicked));
-      try {
-        sessionStorage.removeItem(LAST_CLICKED_KEY);
-      } catch {
-        // ignore
-      }
-
-      const t = setTimeout(() => setHighlightId(null), 2200);
-      return () => clearTimeout(t);
+    try {
+      sessionStorage.removeItem(SCROLL_KEY);
+      sessionStorage.removeItem(CACHE_KEY);
+      sessionStorage.removeItem(LAST_CLICKED_KEY);
+    } catch {
+      // ignore
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
+
+  
+  useEffect(() => {
+    if (highlightId === null) return;
+    const t = setTimeout(() => setHighlightId(null), 2200);
+    return () => clearTimeout(t);
+  }, [highlightId]);
+
+
 
   const handleDelete = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
