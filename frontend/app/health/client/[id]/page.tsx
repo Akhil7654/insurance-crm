@@ -84,6 +84,7 @@ const inputClass =
 const emptyEmiForm = {
   emi_provider: '',
   down_payment: '',
+  emi_amount: '',
   policy_tenure: '',
   emi_tenure: '',
   monthly_emi_amount: '',
@@ -189,6 +190,7 @@ export default function HealthClientHistoryPage() {
         client: clientId,
         emi_provider: newEmi.emi_provider,
         down_payment: newEmi.down_payment === '' ? null : newEmi.down_payment,
+        emi_amount: newEmi.emi_amount === '' ? null : newEmi.emi_amount,
         policy_tenure: newEmi.policy_tenure,
         emi_tenure: newEmi.emi_tenure,
         monthly_emi_amount: newEmi.monthly_emi_amount === '' ? null : newEmi.monthly_emi_amount,
@@ -209,6 +211,7 @@ export default function HealthClientHistoryPage() {
     setEditEmi({
       emi_provider: emi.emi_provider || '',
       down_payment: emi.down_payment?.toString?.() || '',
+      emi_amount: emi.emi_amount?.toString?.() || '',
       policy_tenure: emi.policy_tenure || '',
       emi_tenure: emi.emi_tenure || '',
       monthly_emi_amount: emi.monthly_emi_amount?.toString?.() || '',
@@ -229,6 +232,7 @@ export default function HealthClientHistoryPage() {
       await updateEmiDetails(editingEmiId, {
         emi_provider: editEmi.emi_provider,
         down_payment: editEmi.down_payment === '' ? null : editEmi.down_payment,
+        emi_amount: editEmi.emi_amount === '' ? null : editEmi.emi_amount,
         policy_tenure: editEmi.policy_tenure,
         emi_tenure: editEmi.emi_tenure,
         monthly_emi_amount: editEmi.monthly_emi_amount === '' ? null : editEmi.monthly_emi_amount,
@@ -374,6 +378,17 @@ export default function HealthClientHistoryPage() {
                             </div>
 
                             <div className="space-y-1.5">
+                              <label className="text-[11px] font-medium text-[#7C879E]">EMI Amount</label>
+                              <input
+                                type="number"
+                                value={editEmi.emi_amount}
+                                onChange={(e) => setEditEmi({ ...editEmi, emi_amount: e.target.value })}
+                                placeholder="Enter total EMI amount"
+                                className={inputClass}
+                              />
+                            </div>
+
+                            <div className="space-y-1.5">
                               <label className="text-[11px] font-medium text-[#7C879E]">Policy Tenure</label>
                               <input
                                 type="text"
@@ -454,10 +469,14 @@ export default function HealthClientHistoryPage() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-sm">
+                          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-sm">
                             <div>
                               <p className="text-[#565F76] text-[11px] mb-0.5">Down Payment</p>
                               <p className="text-[#F4F6FA] font-mono text-[13px]">{emi.down_payment ?? '-'}</p>
+                            </div>
+                            <div>
+                              <p className="text-[#565F76] text-[11px] mb-0.5">EMI Amount</p>
+                              <p className="text-[#F4F6FA] font-mono text-[13px]">{emi.emi_amount ?? '-'}</p>
                             </div>
                             <div>
                               <p className="text-[#565F76] text-[11px] mb-0.5">Policy Tenure</p>
@@ -510,6 +529,17 @@ export default function HealthClientHistoryPage() {
                         value={newEmi.down_payment}
                         onChange={(e) => setNewEmi({ ...newEmi, down_payment: e.target.value })}
                         placeholder="Enter down payment"
+                        className={inputClass}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[12px] font-medium text-[#7C879E]">EMI Amount</label>
+                      <input
+                        type="number"
+                        value={newEmi.emi_amount}
+                        onChange={(e) => setNewEmi({ ...newEmi, emi_amount: e.target.value })}
+                        placeholder="Enter total EMI amount"
                         className={inputClass}
                       />
                     </div>

@@ -142,6 +142,7 @@ class EMIDetails(models.Model):
     )
 
     emi_provider = models.CharField(max_length=200, blank=True, default='')
+    emi_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, default=0)
     down_payment = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, default=0)
     policy_tenure = models.CharField(max_length=100, blank=True, default='')
     emi_tenure = models.CharField(max_length=100, blank=True, default='')
