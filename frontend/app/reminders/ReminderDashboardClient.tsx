@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
+const SCROLL_KEY = 'reminders-scroll-pos';
 
 /* ------------------------------------------------------- */
 /* CONFIG */
@@ -160,6 +161,10 @@ export default function ReminderDashboardClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // ✅ Tracks whether we've already tried restoring scroll for this mount,
+  // so we don't re-apply it every time `loading` flips (e.g. after delete/retry).
+  const hasRestoredScroll = useRef(false);
+
   // ✅ Keep the URL in sync whenever the tabs change, so it can be
   // restored on back/forward navigation without a page reload.
   const updateUrl = (nextType: InsuranceType, nextPriority: PriorityType) => {
@@ -188,7 +193,15 @@ export default function ReminderDashboardClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ✅ Save scroll position right before leaving for a client's page,
+  // so we can restore it exactly when the user hits back.
   const routeToClient = (n: any) => {
+    try {
+      sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
+    } catch {
+      // sessionStorage can fail in some private-browsing contexts — safe to ignore
+    }
+
     const type = n.client_insurance_type || 'vehicle';
     router.push(`/${type}/client/${n.client}`);
   };
@@ -226,6 +239,35 @@ export default function ReminderDashboardClient() {
   useEffect(() => {
     load();
   }, []);
+
+  // ✅ Restore scroll position once the list has actually rendered,
+  // not on every future re-render (delete/retry shouldn't jump the page).
+  useEffect(() => {
+    if (loading || hasRestoredScroll.current) return;
+    hasRestoredScroll.current = true;
+
+    let saved: string | null = null;
+    try {
+      saved = sessionStorage.getItem(SCROLL_KEY);
+    } catch {
+      saved = null;
+    }
+
+    if (!saved) return;
+
+    // Wait a tick for layout/animations to settle before scrolling,
+    // otherwise we scroll before the cards have taken their final height.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: parseInt(saved as string, 10), behavior: 'auto' });
+        try {
+          sessionStorage.removeItem(SCROLL_KEY);
+        } catch {
+          // ignore
+        }
+      });
+    });
+  }, [loading]);
 
   const handleDelete = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
