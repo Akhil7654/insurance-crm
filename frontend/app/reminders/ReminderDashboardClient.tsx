@@ -7,6 +7,7 @@ import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 const SCROLL_KEY = 'reminders-scroll-pos';
 const CACHE_KEY = 'reminders-notes-cache';
+const LAST_CLICKED_KEY = 'reminders-last-clicked'; // ✅ NEW: remember which card sent us away
 
 /* ------------------------------------------------------- */
 /* CONFIG */
@@ -158,9 +159,6 @@ export default function ReminderDashboardClient() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // ✅ Was there a saved scroll position waiting for us? If so, this is a
-  // "return visit" (back-nav from a client page) — we treat first paint
-  // differently: no skeleton flash, no replayed entrance stagger.
   const isReturning = useRef(
     typeof window !== 'undefined' && sessionStorage.getItem(SCROLL_KEY) !== null
   ).current;
@@ -172,14 +170,20 @@ export default function ReminderDashboardClient() {
     isPriorityType(searchParams.get('priority')) ? (searchParams.get('priority') as PriorityType) : 'HOT'
   );
 
-  // ✅ Seed notes from cache synchronously on return visits, so the very
-  // first render already has real content — no empty → skeleton → content flash.
   const [notes, setNotes] = useState<any[]>(() =>
     isReturning ? readCache<any[]>(CACHE_KEY) || [] : []
   );
-  const [hideOverdue, setHideOverdue] = useState(false);
+
+  // ✅ Overdue is hidden by default. It only auto-opens on return if the
+  // card that took you away was itself an overdue one (see the layout
+  // effect below) — otherwise it stays exactly as you left it.
+  const [hideOverdue, setHideOverdue] = useState(true);
+
   const [loading, setLoading] = useState(!isReturning || notes.length === 0);
   const [error, setError] = useState<string | null>(null);
+
+  // ✅ Which card (by id) should play the "welcome back" glow animation
+  const [highlightId, setHighlightId] = useState<number | null>(null);
 
   const scrollRestored = useRef(false);
 
@@ -211,6 +215,7 @@ export default function ReminderDashboardClient() {
     try {
       sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
       sessionStorage.setItem(CACHE_KEY, JSON.stringify(notes));
+      sessionStorage.setItem(LAST_CLICKED_KEY, String(n.id)); // ✅ remember exactly which card
     } catch {
       // sessionStorage can fail in some private-browsing contexts — safe to ignore
     }
@@ -246,31 +251,30 @@ export default function ReminderDashboardClient() {
         setError('Failed to load reminders');
         setNotes([]);
       }
-      // on a silent background refresh, keep showing cached notes on failure
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // ✅ On a return visit we already have cached notes to show instantly —
-    // still refresh in the background, but don't show the skeleton for it.
     load(isReturning && notes.length > 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ useLayoutEffect runs synchronously before the browser paints, so the
-  // scroll position is already correct in the very first frame the user
-  // sees — nothing visibly jumps or snaps into place.
+  // ✅ Restores scroll position AND, if the note you clicked was overdue,
+  // reveals the overdue section + queues the highlight glow on that card.
   useLayoutEffect(() => {
     if (loading || scrollRestored.current) return;
     scrollRestored.current = true;
 
     let saved: string | null = null;
+    let lastClicked: string | null = null;
     try {
       saved = sessionStorage.getItem(SCROLL_KEY);
+      lastClicked = sessionStorage.getItem(LAST_CLICKED_KEY);
     } catch {
       saved = null;
+      lastClicked = null;
     }
 
     if (saved) {
@@ -282,6 +286,26 @@ export default function ReminderDashboardClient() {
         // ignore
       }
     }
+
+    if (lastClicked) {
+      const clickedNote = notes.find((n) => String(n.id) === lastClicked);
+
+      // Only auto-unhide overdue if that's specifically what you clicked into
+      if (clickedNote?.status === 'overdue') {
+        setHideOverdue(false);
+      }
+
+      setHighlightId(Number(lastClicked));
+      try {
+        sessionStorage.removeItem(LAST_CLICKED_KEY);
+      } catch {
+        // ignore
+      }
+
+      const t = setTimeout(() => setHighlightId(null), 2200);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
 
   const handleDelete = async (e: React.MouseEvent, id: number) => {
@@ -331,9 +355,6 @@ export default function ReminderDashboardClient() {
     [notes]
   );
 
-  // ✅ Entrance timings collapse to near-zero on a return visit — content
-  // is already there, it just needs a very quick, gentle settle rather
-  // than replaying the full "page just loaded" choreography.
   const enter = (delay: number) =>
     isReturning
       ? { transition: { duration: 0.18 } }
@@ -343,16 +364,27 @@ export default function ReminderDashboardClient() {
     const status = statusMeta(n.status);
     const priority = priorityMeta(n.priority || 'HOT');
     const insurance = insuranceMeta(n.client_insurance_type);
+    const isHighlighted = n.id === highlightId; // ✅ this is the card we just came back from
 
     return (
       <motion.div
         key={n.id}
         initial={{ opacity: 0, y: isReturning ? 4 : 16 }}
-        animate={{ opacity: 1, y: 0 }}
+        animate={
+          isHighlighted
+            ? { opacity: 1, y: 0, scale: [1, 1.035, 1] }
+            : { opacity: 1, y: 0, scale: 1 }
+        }
         exit={{ opacity: 0, y: -10 }}
-        transition={{ delay: isReturning ? 0 : i * 0.04, duration: isReturning ? 0.18 : 0.3 }}
+        transition={
+          isHighlighted
+            ? { duration: 1, times: [0, 0.45, 1], ease: 'easeOut' }
+            : { delay: isReturning ? 0 : i * 0.04, duration: isReturning ? 0.18 : 0.3 }
+        }
         onClick={() => routeToClient(n)}
-        className="group relative rounded-2xl p-[1px] overflow-hidden cursor-pointer"
+        className={`group relative rounded-2xl p-[1px] overflow-hidden cursor-pointer ${
+          isHighlighted ? 'welcome-back-glow' : ''
+        }`}
       >
         <div
           className="absolute -inset-[40%] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -362,7 +394,25 @@ export default function ReminderDashboardClient() {
           }}
         />
 
-        <div className="relative z-10 rounded-[15px] bg-[#0F1420] border border-white/[0.06] group-hover:border-white/[0.02] transition-colors p-5">
+        {/* ✅ Extra sweeping ring specifically for the "welcome back" card */}
+        {isHighlighted && (
+          <div
+            className="absolute -inset-[60%] pointer-events-none"
+            style={{
+              background: `conic-gradient(from 0deg, transparent 0%, #5B8DEF 10%, transparent 22%)`,
+              animation: 'card-glow-spin 1.1s linear 2',
+            }}
+          />
+        )}
+
+        <div
+          className={`relative z-10 rounded-[15px] bg-[#0F1420] border transition-colors p-5 ${
+            isHighlighted
+              ? 'border-[#5B8DEF]/60'
+              : 'border-white/[0.06] group-hover:border-white/[0.02]'
+          }`}
+          style={isHighlighted ? { animation: 'highlight-pulse 1s ease-out 2' } : undefined}
+        >
           <div className="flex justify-between items-start gap-4">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-2">
@@ -434,6 +484,12 @@ export default function ReminderDashboardClient() {
     <div className="relative min-h-screen bg-[#05070C] text-[#F4F6FA] overflow-hidden">
       <style>{`
         @keyframes card-glow-spin { to { transform: rotate(360deg); } }
+        @keyframes highlight-pulse {
+          0% { box-shadow: 0 0 0 0 rgba(91,141,239,0.55); }
+          70% { box-shadow: 0 0 0 16px rgba(91,141,239,0); }
+          100% { box-shadow: 0 0 0 0 rgba(91,141,239,0); }
+        }
+        .welcome-back-glow { z-index: 20; }
         @media (prefers-reduced-motion: reduce) {
           * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
         }
