@@ -7,7 +7,7 @@ import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 const SCROLL_KEY = 'reminders-scroll-pos';
 const CACHE_KEY = 'reminders-notes-cache';
-const LAST_CLICKED_KEY = 'reminders-last-clicked'; // ✅ NEW: remember which card sent us away
+const LAST_CLICKED_KEY = 'reminders-last-clicked';
 
 /* ------------------------------------------------------- */
 /* CONFIG */
@@ -170,9 +170,11 @@ export default function ReminderDashboardClient() {
     isPriorityType(searchParams.get('priority')) ? (searchParams.get('priority') as PriorityType) : 'HOT'
   );
 
-  // ✅ Compute everything derived from the cache/lastClicked ONCE, synchronously,
-  // before the first render — so hideOverdue is already correct on first paint
-  // instead of flipping open after scroll restoration has already run.
+  // ✅ Everything derived from cache/last-clicked is computed ONCE,
+  // synchronously, before first paint — so the overdue section is already
+  // in the right open/closed state (and at the right height) before we
+  // ever try to restore scroll position. This is what stops the
+  // "restores scroll → then pops open/closed → scroll now wrong" glitch.
   const initRef = useRef<{
     notes: any[];
     hideOverdue: boolean;
@@ -195,7 +197,8 @@ export default function ReminderDashboardClient() {
 
     initRef.current = {
       notes: cachedNotes,
-      // Only auto-open overdue if the card you clicked into WAS overdue.
+      // Default: hidden. Only stay open if the note you clicked into was
+      // itself an overdue one (i.e. you had it open and clicked through it).
       hideOverdue: clickedNote?.status === 'overdue' ? false : true,
       highlightId: lastClickedId ? Number(lastClickedId) : null,
     };
@@ -209,12 +212,85 @@ export default function ReminderDashboardClient() {
 
   const scrollRestored = useRef(false);
 
-  // ...(updateUrl, setSelectedInsurance, setSelectedPriority, the URL-sync
-  //     useEffect, routeToClient, load() — all unchanged from before)...
+  const updateUrl = (nextType: InsuranceType, nextPriority: PriorityType) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('type', nextType);
+    params.set('priority', nextPriority);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
-  // ✅ Scroll restoration ONLY. Layout (overdue open/closed) is already
-  // correct from the initial render above, so this now runs against the
-  // right heights on its very first pass — no jump, no premature collapse.
+  const setSelectedInsurance = (type: InsuranceType) => {
+    setSelectedInsuranceState(type);
+    updateUrl(type, selectedPriority);
+  };
+
+  const setSelectedPriority = (priority: PriorityType) => {
+    setSelectedPriorityState(priority);
+    updateUrl(selectedInsurance, priority);
+  };
+
+  useEffect(() => {
+    if (!searchParams.get('type') || !searchParams.get('priority')) {
+      updateUrl(selectedInsurance, selectedPriority);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ✅ Writes LAST_CLICKED_KEY every time — this is the piece that must be
+  // present for the overdue reopen-on-return logic above to ever fire.
+  const routeToClient = (n: any) => {
+    try {
+      sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(notes));
+      sessionStorage.setItem(LAST_CLICKED_KEY, String(n.id));
+    } catch {
+      // sessionStorage can fail in some private-browsing contexts — safe to ignore
+    }
+
+    const type = n.client_insurance_type || 'vehicle';
+    router.push(`/${type}/client/${n.client}`);
+  };
+
+  const load = async (silent = false) => {
+    try {
+      setError(null);
+      if (!silent) setLoading(true);
+
+      const [today, overdue, upcoming] = await Promise.all([
+        fetchJSON(`${API}/notes/today/`),
+        fetchJSON(`${API}/notes/overdue/`),
+        fetchJSON(`${API}/notes/upcoming/`),
+      ]);
+
+      const combined = [
+        ...overdue.map((n: any) => ({ ...n, status: 'overdue' })),
+        ...today.map((n: any) => ({ ...n, status: 'today' })),
+        ...upcoming.map((n: any) => ({ ...n, status: 'upcoming' })),
+      ];
+
+      combined.sort(
+        (a: any, b: any) => new Date(a.follow_up_date).getTime() - new Date(b.follow_up_date).getTime()
+      );
+
+      setNotes(combined);
+    } catch {
+      if (!silent) {
+        setError('Failed to load reminders');
+        setNotes([]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load(isReturning && notes.length > 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ✅ Scroll restoration ONLY. Layout (overdue open/closed) was already
+  // decided synchronously above, so this runs against the correct heights
+  // on its first pass — no jump, no "closes right after restoring."
   useLayoutEffect(() => {
     if (loading || scrollRestored.current) return;
     scrollRestored.current = true;
@@ -239,14 +315,12 @@ export default function ReminderDashboardClient() {
     }
   }, [loading]);
 
-  
+  // ✅ Clears the highlight glow after it's played once.
   useEffect(() => {
     if (highlightId === null) return;
     const t = setTimeout(() => setHighlightId(null), 2200);
     return () => clearTimeout(t);
   }, [highlightId]);
-
-
 
   const handleDelete = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
@@ -304,7 +378,7 @@ export default function ReminderDashboardClient() {
     const status = statusMeta(n.status);
     const priority = priorityMeta(n.priority || 'HOT');
     const insurance = insuranceMeta(n.client_insurance_type);
-    const isHighlighted = n.id === highlightId; // ✅ this is the card we just came back from
+    const isHighlighted = n.id === highlightId;
 
     return (
       <motion.div
@@ -334,7 +408,6 @@ export default function ReminderDashboardClient() {
           }}
         />
 
-        {/* ✅ Extra sweeping ring specifically for the "welcome back" card */}
         {isHighlighted && (
           <div
             className="absolute -inset-[60%] pointer-events-none"
@@ -451,7 +524,6 @@ export default function ReminderDashboardClient() {
       />
 
       <div className="relative mx-auto w-full max-w-4xl px-6 py-14 sm:py-20">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: isReturning ? 0 : -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -467,7 +539,6 @@ export default function ReminderDashboardClient() {
           </p>
         </motion.div>
 
-        {/* Insurance segmented control */}
         <LayoutGroup>
           <motion.div
             initial={{ opacity: 0, y: isReturning ? 0 : 10 }}
@@ -520,7 +591,6 @@ export default function ReminderDashboardClient() {
           </motion.div>
         </LayoutGroup>
 
-        {/* Priority stat tiles */}
         <motion.div
           initial={{ opacity: 0, y: isReturning ? 0 : 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -569,7 +639,6 @@ export default function ReminderDashboardClient() {
           })}
         </motion.div>
 
-        {/* List */}
         {loading ? (
           <RemindersSkeleton />
         ) : error ? (
