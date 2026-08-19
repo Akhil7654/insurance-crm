@@ -28,6 +28,19 @@ const SearchIcon = () => (
   </svg>
 );
 
+const SpinnerIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 animate-spin">
+    <circle
+      cx="12" cy="12" r="9"
+      stroke="currentColor" strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeDasharray="42"
+      strokeDashoffset="14"
+      opacity="0.9"
+    />
+  </svg>
+);
+
 const PlusIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
     <path d="M12 5v14M5 12h14" />
@@ -145,7 +158,14 @@ function SummarySkeleton() {
 export default function HealthClientsPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
+
+  // Raw text as typed, updates instantly
+  const [searchInput, setSearchInput] = useState('');
+  // Debounced value actually used for filtering
   const [search, setSearch] = useState('');
+  // True while waiting for the debounce to settle
+  const [isSearching, setIsSearching] = useState(false);
+
   const router = useRouter();
 
   const [month, setMonth] = useState<string>(() => toYYYYMM(new Date()));
@@ -192,6 +212,19 @@ export default function HealthClientsPage() {
     loadSummary();
     // eslint-disable-next-line
   }, [month]);
+
+  // Debounce searchInput -> search, and track pending state
+  useEffect(() => {
+    if (searchInput === search) return;
+    setIsSearching(true);
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+      setIsSearching(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line
+  }, [searchInput]);
 
   const filteredClients = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -352,7 +385,7 @@ export default function HealthClientsPage() {
               )}
             </div>
 
-            {search.trim() && !loadingClients && (
+            {search.trim() && !loadingClients && !isSearching && (
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -368,15 +401,18 @@ export default function HealthClientsPage() {
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="mb-6">
           <div className="flex items-center gap-2.5 bg-[#0F1420] border border-white/[0.06] focus-within:border-[#5B8DEF]/50 rounded-xl px-4 py-3 transition-colors">
             <span className="text-[#565F76]">
-              <SearchIcon />
+              {isSearching ? <SpinnerIcon /> : <SearchIcon />}
             </span>
             <input
               type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search client by name..."
               className="w-full bg-transparent outline-none text-[#F4F6FA] placeholder:text-[#565F76] text-sm"
             />
+            {isSearching && (
+              <span className="text-[11px] text-[#565F76] font-mono shrink-0">searching…</span>
+            )}
           </div>
         </motion.div>
 
@@ -431,7 +467,7 @@ export default function HealthClientsPage() {
 
         {/* Client list */}
         <div className="space-y-3">
-          {loadingClients ? (
+          {loadingClients || isSearching ? (
             <ClientsSkeleton />
           ) : errorClients ? (
             <div className="text-center py-12">
