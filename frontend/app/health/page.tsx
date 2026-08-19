@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRef } from 'react';
 import {
   getHealthClients,
   deleteClient,
@@ -156,6 +157,8 @@ function SummarySkeleton() {
 }
 
 export default function HealthClientsPage() {
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchMovedRef = useRef(false);
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
 
@@ -496,14 +499,47 @@ export default function HealthClientsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ delay: i * 0.03 }}
-                    // removed onClick and added faster navigation + prefetch
+                    // Prefetch on hover (desktop) and touchstart (mobile).
+                    // For pointer events: navigate immediately for non-touch pointers.
                     onPointerDown={(e: React.PointerEvent) => {
                       const target = e.target as HTMLElement | null;
-                      // don't navigate if user pressed on a button / interactive element
                       if (target && target.closest('button')) return;
-                      router.push(`/health/client/${client.id}`);
+                      if ((e as any).pointerType !== 'touch') {
+                        router.push(`/health/client/${client.id}`);
+                      } else {
+                        // warm cache for touch; actual navigation handled on touchend to allow scrolling
+                        router.prefetch(`/health/client/${client.id}`);
+                      }
                     }}
                     onMouseEnter={() => router.prefetch(`/health/client/${client.id}`)}
+                    onTouchStart={(e: React.TouchEvent) => {
+                      const target = e.target as HTMLElement | null;
+                      if (target && target.closest('button')) return;
+                      const t = e.touches[0];
+                      touchStartRef.current = { x: t.clientX, y: t.clientY };
+                      touchMovedRef.current = false;
+                      router.prefetch(`/health/client/${client.id}`);
+                    }}
+                    onTouchMove={(e: React.TouchEvent) => {
+                      const start = touchStartRef.current;
+                      if (!start) return;
+                      const t = e.touches[0];
+                      const dx = Math.abs(t.clientX - start.x);
+                      const dy = Math.abs(t.clientY - start.y);
+                      if (dx > 8 || dy > 8) touchMovedRef.current = true;
+                    }}
+                    onTouchEnd={(e: React.TouchEvent) => {
+                      const target = e.target as HTMLElement | null;
+                      if (target && target.closest('button')) return;
+                      if (touchMovedRef.current) {
+                        touchStartRef.current = null;
+                        touchMovedRef.current = false;
+                        return;
+                      }
+                      touchStartRef.current = null;
+                      touchMovedRef.current = false;
+                      router.push(`/health/client/${client.id}`);
+                    }}
                     className="group relative rounded-2xl p-[1px] overflow-hidden cursor-pointer"
                   >
                     <div
