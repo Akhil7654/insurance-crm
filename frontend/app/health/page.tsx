@@ -496,7 +496,14 @@ export default function HealthClientsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ delay: i * 0.03 }}
-                    onClick={() => router.push(`/health/client/${client.id}`)}
+                    // removed onClick and added faster navigation + prefetch
+                    onPointerDown={(e: React.PointerEvent) => {
+                      const target = e.target as HTMLElement | null;
+                      // don't navigate if user pressed on a button / interactive element
+                      if (target && target.closest('button')) return;
+                      router.push(`/health/client/${client.id}`);
+                    }}
+                    onMouseEnter={() => router.prefetch(`/health/client/${client.id}`)}
                     className="group relative rounded-2xl p-[1px] overflow-hidden cursor-pointer"
                   >
                     <div
