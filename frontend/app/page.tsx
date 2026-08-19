@@ -82,6 +82,7 @@ function useClock() {
   return time;
 }
 
+
 function BentoCard({
   card,
   onOpen,
@@ -95,11 +96,13 @@ function BentoCard({
 }) {
   return (
     <motion.button
+      type="button"
+      whileTap={{ scale: 0.98 }}
       initial={{ opacity: 0, y: 28, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: 'spring', stiffness: 120, damping: 16, delay: 0.9 + index * 0.09 }}
       onClick={onOpen}
-      className={`group relative text-left rounded-2xl p-[1px] overflow-hidden cursor-pointer ${wide ? 'col-span-full' : ''}`}
+      className={`group relative text-left rounded-2xl p-[1px] overflow-hidden cursor-pointer active:scale-[0.98] active:opacity-80 transition-transform ${wide ? 'col-span-full' : ''}`}
     >
       {/* rotating gradient glow — visible only on hover */}
       <div
@@ -164,6 +167,7 @@ function BentoCard({
     </motion.button>
   );
 }
+
 
 export default function HomePage() {
   const router = useRouter();
