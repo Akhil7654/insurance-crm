@@ -93,8 +93,12 @@ function BentoCard({
   index: number;
   wide?: boolean;
 }) {
+  const router = useRouter();
+
   return (
     <motion.button
+      onPointerEnter={() => router.prefetch(card.href)}
+      onTouchStart={() => router.prefetch(card.href)}
       initial={{ opacity: 0, y: 28, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: 'spring', stiffness: 120, damping: 16, delay: 0.9 + index * 0.09 }}
