@@ -11,7 +11,7 @@ class Client(models.Model):
     name = models.CharField(max_length=100)
     mobile = models.CharField(max_length=15)
     place = models.CharField(max_length=100, blank=True)
-    insurance_type = models.CharField(max_length=10, choices=INSURANCE_TYPE_CHOICES)
+    insurance_type = models.CharField(max_length=10, choices=INSURANCE_TYPE_CHOICES,db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_converted = models.BooleanField(default=False)
 
@@ -28,7 +28,7 @@ class InvestmentDetails(models.Model):
     investment_type = models.CharField(max_length=200, blank=True, default='')
     remarks = models.TextField(blank=True, default='')
 
-    renewal_date = models.DateField(null=True, blank=True)
+    renewal_date = models.DateField(null=True, blank=True,db_index=True)
 
     def __str__(self):
         return f"{self.client.name} - Investment"
@@ -84,7 +84,7 @@ class VehicleInsurance(models.Model):
     vehicle_type = models.CharField(max_length=50)
     insurance_cover = models.CharField(max_length=20, choices=INSURANCE_COVER_CHOICES)
 
-    renewal_date = models.DateField(null=True, blank=True)
+    renewal_date = models.DateField(null=True, blank=True,db_index=True)
 
     # ⚠️ Legacy single-EMI fields — kept for backward compatibility with
     # existing data, but the UI now uses the EMIDetails model below
@@ -114,7 +114,7 @@ class HealthInsurance(models.Model):
     ages = models.CharField(max_length=100, help_text="Comma separated ages")
     ped = models.TextField(blank=True, help_text="Pre-existing disease details")
 
-    renewal_date = models.DateField(null=True, blank=True)
+    renewal_date = models.DateField(null=True, blank=True,db_index=True)
     renewal_dismissed = models.BooleanField(default=False)
 
     # ⚠️ Legacy single-EMI fields — kept for backward compatibility with
@@ -187,6 +187,11 @@ class Note(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     completed = models.BooleanField(default=False)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['follow_up_date', 'reminder', 'completed']),
+        ]
 
     def __str__(self):
         return f"Note for {self.client.name} - {self.priority}"

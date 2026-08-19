@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_date
+from django.db.models import Prefetch
 import os
 
 from .models import (
@@ -46,6 +47,18 @@ class ClientViewSet(viewsets.ModelViewSet):
         insurance_type = self.request.query_params.get("insurance_type")
         if insurance_type:
             qs = qs.filter(insurance_type=insurance_type)
+
+        if self.action == 'retrieve':
+            qs = qs.select_related(
+                'vehicle_details', 'health_details', 'investment_details'
+            ).prefetch_related(
+                'quotes',
+                'emi_details',
+                Prefetch('notes', queryset=Note.objects.select_related('client').order_by('-follow_up_date')),
+                'documents',
+                'conversions',
+                'investment_conversions',
+            )
         return qs
 
     def get_serializer_class(self):
@@ -56,7 +69,7 @@ class ClientViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def history(self, request, pk=None):
         client = self.get_object()
-        notes = client.notes.order_by('-follow_up_date')
+        notes = client.notes.select_related('client').order_by('-follow_up_date')
         serializer = NoteSerializer(notes, many=True)
         return Response(serializer.data)
 
